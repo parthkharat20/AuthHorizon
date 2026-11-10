@@ -242,3 +242,42 @@ def test_api_evidence_endpoints():
     assert v_data["is_tamper_free"] is True
     assert v_data["paypal_synced"] is True
 
+
+def test_cross_order_consent_chain_isolation():
+    """Verify that consent hash chains for different orders are isolated and each begins at GENESIS_HASH."""
+    client = TestClient(app)
+
+    # Order A
+    res_a = client.post("/api/orders/create", json={
+        "items": [{"sku": "SKU-A", "name": "Item A", "amount": 25.0, "quantity": 1}],
+        "currency": "USD"
+    })
+    order_a_id = res_a.json()["order_id"]
+    client.post(f"/api/orders/{order_a_id}/authorize")
+    consent_a = client.post("/api/consent/submit", json={
+        "order_id": order_a_id,
+        "choice": "WAIT",
+        "locale": "en"
+    }).json()
+
+    # First consent of Order A must link to GENESIS_HASH
+    assert consent_a["prev_hash"] == GENESIS_HASH
+
+    # Order B created subsequently
+    res_b = client.post("/api/orders/create", json={
+        "items": [{"sku": "SKU-B", "name": "Item B", "amount": 40.0, "quantity": 1}],
+        "currency": "USD"
+    })
+    order_b_id = res_b.json()["order_id"]
+    client.post(f"/api/orders/{order_b_id}/authorize")
+    consent_b = client.post("/api/consent/submit", json={
+        "order_id": order_b_id,
+        "choice": "CANCEL",
+        "locale": "en"
+    }).json()
+
+    # First consent of Order B MUST also link to GENESIS_HASH (not Order A's consent hash!)
+    assert consent_b["prev_hash"] == GENESIS_HASH
+    assert consent_b["prev_hash"] != consent_a["consent_hash"]
+
+

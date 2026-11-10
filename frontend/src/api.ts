@@ -18,10 +18,11 @@ const client = axios.create({ baseURL: "/api" });
 export async function createOrder(): Promise<CreateOrderResponse> {
   const payload = {
     items: [
-      { sku: "BEARING-4X", name: "Precision Bearings (Set of 4)", quantity: 1, unit_price: 30.0 },
-      { sku: "HYDRO-PUMP", name: "Hydraulic Pump Assembly", quantity: 1, unit_price: 30.0 },
-      { sku: "CERAMIC-KIT", name: "Ceramic Coating Kit", quantity: 1, unit_price: 30.0 },
+      { sku: "BEARING-4X", name: "Precision Bearings (Set of 4)", quantity: 1, amount: 30.0 },
+      { sku: "HYDRO-PUMP", name: "Hydraulic Pump Assembly", quantity: 1, amount: 30.0 },
+      { sku: "CERAMIC-KIT", name: "Ceramic Coating Kit", quantity: 1, amount: 30.0 },
     ],
+    currency: "USD"
   };
   const { data } = await client.post<CreateOrderResponse>("/orders/create", payload);
   return data;

@@ -53,23 +53,23 @@ async def lifespan(app: FastAPI):
 # Initialize FastAPI App
 app = FastAPI(
     title="AuthHorizon API",
-    description="Split-Shipment Intelligence & Legally Compliant Buyer Consent Engine",
+    description="Split-Shipment Intelligence & Consumer Consent Engine",
     version="1.0.0",
     lifespan=lifespan
 )
 
 # CORS Configuration
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+RENDER_URL = os.getenv("RENDER_URL", "")
+_origins = [o for o in [FRONTEND_URL, "http://localhost:3000", "http://127.0.0.1:5173", RENDER_URL] if o]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL, "http://localhost:3000", "http://127.0.0.1:5173", "*"],
+    allow_origins=_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
-
-# Also call init_db immediately for synchronous test contexts
-init_db()
 
 # Dependency to get Payment Gateway
 def get_gateway() -> PayPalGatewayInterface:
@@ -620,8 +620,10 @@ def submit_buyer_consent(
             raise HTTPException(status_code=502, detail=f"PayPal void error: {str(e)}")
 
     # ── Cryptographic SHA-256 Consent Hash Chain (T5) ─────────────
-    # Link to latest consent record's hash to form an immutable hash chain
-    latest_consent = db.query(BuyerConsentModel).order_by(BuyerConsentModel.id.desc()).first()
+    # Link to latest consent record's hash to form an immutable hash chain for this order
+    latest_consent = db.query(BuyerConsentModel).filter(
+        BuyerConsentModel.order_id == order.id
+    ).order_by(BuyerConsentModel.id.desc()).first()
     prev_hash = latest_consent.consent_hash if latest_consent and latest_consent.consent_hash else GENESIS_HASH
     locale = getattr(req, "locale", "en") or "en"
 
@@ -763,7 +765,6 @@ async def paypal_webhook_handler(
     if not is_valid:
         raise HTTPException(status_code=401, detail="Webhook signature verification failed")
 
-    import json
     event = json.loads(body_str)
     event_type = event.get("event_type")
     resource = event.get("resource", {})
@@ -936,7 +937,6 @@ def download_order_evidence(order_id: int, db: Session = Depends(get_db)):
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    import json
     bundle = generate_order_evidence_bundle(order)
     bundle_json = json.dumps(bundle, indent=2, ensure_ascii=False)
     filename = f"authhorizon-evidence-order-{order.id}.json"

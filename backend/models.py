@@ -342,34 +342,3 @@ def compute_consent_hash(displayed_text: str, choice: str, timestamp: str) -> st
     }, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
-
-# ── Database Setup ───────────────────────────────────────────────
-
-def create_db(db_url: str = "sqlite:///./authhorizon.db"):
-    engine = create_engine(db_url, echo=False)
-    Base.metadata.create_all(engine)
-    if "sqlite" in db_url:
-        with engine.connect() as conn:
-            from sqlalchemy import text
-            for col in [
-                "buyer_locale VARCHAR(8) DEFAULT 'en'",
-                "buyer_message TEXT"
-            ]:
-                try:
-                    conn.execute(text(f"ALTER TABLE delay_notices ADD COLUMN {col}"))
-                    conn.commit()
-                except Exception:
-                    pass
-            for col in [
-                "buyer_id VARCHAR(64) DEFAULT 'BUYER-PORTAL-VERIFIED'",
-                "locale VARCHAR(8) DEFAULT 'en'",
-                "prev_hash VARCHAR(64) DEFAULT '0000000000000000000000000000000000000000000000000000000000000000'",
-                "canonical_payload TEXT"
-            ]:
-                try:
-                    conn.execute(text(f"ALTER TABLE buyer_consents ADD COLUMN {col}"))
-                    conn.commit()
-                except Exception:
-                    pass
-    return sessionmaker(bind=engine)
-

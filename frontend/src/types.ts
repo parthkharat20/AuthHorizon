@@ -1,11 +1,14 @@
 /* ── TypeScript interfaces matching backend schemas ── */
 
 export interface LineItem {
+  id?: number;
   sku: string;
   name: string;
   quantity: number;
-  unit_price: number;
-  status: "IN_STOCK" | "DELAYED" | "CAPTURED" | "VOIDED" | "SWAPPED";
+  amount: number;
+  unit_price?: number;
+  status: "IN_STOCK" | "DELAYED" | "CAPTURED" | "VOIDED" | "SWAPPED" | "SHIPPED" | "CANCELLED";
+  is_delayed?: boolean;
   delay_reason?: string;
   new_ship_date?: string;
 }

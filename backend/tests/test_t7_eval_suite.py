@@ -129,3 +129,4 @@ def test_api_eval_endpoints():
     data_post = res_post.json()
     assert data_post["total_notices"] == 20
     assert data_post["all_tests_passed"] is True
+

@@ -256,8 +256,7 @@ def evaluate_review_routing(
             iso_date = extraction.new_ship_date
             if (iso_date not in notice_norm and 
                 dotted_date not in notice_norm and 
-                dotted_date_z not in notice_norm and
-                f"{int(day)}" not in notice_norm):
+                dotted_date_z not in notice_norm):
                 return True, "Extraction date is not grounded in source notice text"
 
     return False, "Approved for automatic buyer consent presentation"

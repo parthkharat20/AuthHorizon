@@ -229,3 +229,4 @@ def run_evaluation(notices_path: str = "eval/notices.json", output_path: str = "
 
 if __name__ == "__main__":
     run_evaluation()
+

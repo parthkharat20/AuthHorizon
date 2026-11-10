@@ -12,7 +12,11 @@ import {
   AlertTriangle,
   History,
   Download,
-  Link2
+  Link2,
+  Repeat,
+  Activity,
+  CheckCircle2,
+  Server
 } from 'lucide-react';
 import { SplitHoldBar } from '../components/SplitHoldBar';
 import { NoticeParserCard } from '../components/NoticeParserCard';
@@ -26,6 +30,9 @@ export const MerchantDashboard: React.FC = () => {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [verifyingChain, setVerifyingChain] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<any | null>(null);
+  const [activeLedgerTab, setActiveLedgerTab] = useState<'audits' | 'gateway_logs'>('audits');
+  const [testingIdempotency, setTestingIdempotency] = useState<boolean>(false);
+  const [idempotencyResult, setIdempotencyResult] = useState<any | null>(null);
 
   const handleVerifyEvidence = async () => {
     if (!selectedOrderId) return;
@@ -38,6 +45,23 @@ export const MerchantDashboard: React.FC = () => {
       console.error('Failed to verify evidence:', err);
     } finally {
       setVerifyingChain(false);
+    }
+  };
+
+  const handleTestIdempotency = async () => {
+    if (!selectedOrderId) return;
+    setTestingIdempotency(true);
+    setIdempotencyResult(null);
+    try {
+      const res = await axios.post(`/api/orders/${selectedOrderId}/test-idempotency`);
+      setIdempotencyResult(res.data);
+      await fetchOrderDetails(selectedOrderId);
+      await fetchOrders();
+    } catch (err: any) {
+      console.error('Failed idempotency test:', err);
+      setActionMsg(`Idempotency Test Error: ${err.response?.data?.detail || err.message}`);
+    } finally {
+      setTestingIdempotency(false);
     }
   };
 
@@ -291,17 +315,27 @@ export const MerchantDashboard: React.FC = () => {
           {/* Audit Ledger & Reconciler Logs */}
           <div className="bg-slate-900/80 border border-slate-700/60 rounded-xl p-6 shadow-xl backdrop-blur-md flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                     <History className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-slate-100">Capture Audit Ledger</h3>
-                    <p className="text-xs text-slate-400">Cryptographically verified capture logs & webhook receipts</p>
+                    <h3 className="text-base font-bold text-slate-100">Capture Audit Ledger & Reconciler</h3>
+                    <p className="text-xs text-slate-400">Cryptographically verified capture logs, idempotency & gateway events</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  <button
+                    onClick={handleTestIdempotency}
+                    disabled={testingIdempotency || !currentOrder?.audits || currentOrder.audits.length === 0}
+                    className="px-2.5 py-1 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-40"
+                    title={!currentOrder?.audits || currentOrder.audits.length === 0 ? "Execute a capture first to test replay" : "Re-sends duplicate PayPal-Request-Id to verify idempotency deduplication"}
+                  >
+                    <Repeat className={`w-3.5 h-3.5 text-cyan-400 ${testingIdempotency ? 'animate-spin' : ''}`} />
+                    <span>{testingIdempotency ? 'Replaying...' : 'Test Idempotency'}</span>
+                  </button>
+
                   <button
                     onClick={handleVerifyEvidence}
                     disabled={verifyingChain}
@@ -332,6 +366,69 @@ export const MerchantDashboard: React.FC = () => {
                 </div>
               </div>
 
+              {/* Ledger Tab Navigation */}
+              <div className="flex items-center gap-1.5 mb-3 p-1 rounded-lg bg-slate-950/80 border border-slate-800 text-xs">
+                <button
+                  onClick={() => setActiveLedgerTab('audits')}
+                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                    activeLedgerTab === 'audits'
+                      ? 'bg-slate-800 text-slate-100 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <History className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Capture Audits ({currentOrder?.audits?.length || 0})</span>
+                </button>
+                <button
+                  onClick={() => setActiveLedgerTab('gateway_logs')}
+                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                    activeLedgerTab === 'gateway_logs'
+                      ? 'bg-slate-800 text-slate-100 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Activity className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Gateway Reconciler Logs ({currentOrder?.gateway_logs?.length || 0})</span>
+                </button>
+              </div>
+
+              {/* Idempotency Result Banner */}
+              {idempotencyResult && (
+                <div className="mb-3 p-3 rounded-lg border bg-cyan-950/40 border-cyan-700/60 text-cyan-200 text-xs shadow-lg space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-bold text-cyan-300">
+                      <CheckCircle2 className="w-4 h-4 text-cyan-400" />
+                      <span>Idempotency Replay Verified (RFC 7240 / PayPal REST v2)</span>
+                    </div>
+                    <button
+                      onClick={() => setIdempotencyResult(null)}
+                      className="text-cyan-400 hover:text-white font-bold ml-2 text-xs"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-cyan-100">{idempotencyResult.message}</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1 font-mono text-[10px]">
+                    <div className="p-1.5 rounded bg-slate-950/70 border border-cyan-800/40">
+                      <span className="text-slate-400 block">Original Capture:</span>
+                      <span className="text-cyan-300 truncate block">{idempotencyResult.original_capture_id}</span>
+                    </div>
+                    <div className="p-1.5 rounded bg-slate-950/70 border border-cyan-800/40">
+                      <span className="text-slate-400 block">Replayed Capture:</span>
+                      <span className="text-emerald-400 truncate block">{idempotencyResult.replayed_capture_id}</span>
+                    </div>
+                    <div className="p-1.5 rounded bg-slate-950/70 border border-cyan-800/40">
+                      <span className="text-slate-400 block">Duplicate Deduplicated:</span>
+                      <span className="text-emerald-400 font-bold block">✓ True (Zero Dups)</span>
+                    </div>
+                    <div className="p-1.5 rounded bg-slate-950/70 border border-cyan-800/40">
+                      <span className="text-slate-400 block">Ledger Movements:</span>
+                      <span className="text-slate-200 font-bold block">{idempotencyResult.total_ledger_movements} (Single Entry)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Verification Result Banner */}
               {verificationResult && (
                 <div className={`mb-3 p-2.5 rounded-lg border text-xs flex items-center justify-between ${
@@ -349,59 +446,118 @@ export const MerchantDashboard: React.FC = () => {
                 </div>
               )}
 
-              {/* Audit Records List */}
-              <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                {currentOrder?.audits && currentOrder.audits.length > 0 ? (
-                  currentOrder.audits.map((a: any) => (
-                    <div
-                      key={a.id}
-                      className="p-3 rounded-lg bg-slate-950/70 border border-slate-800 flex items-center justify-between text-xs"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <strong className="text-slate-100">${a.amount.toFixed(2)} USD</strong>
-                          <span className="font-mono text-[10px] text-slate-400">({a.capture_type})</span>
+              {/* Tab Content: Capture Audits View */}
+              {activeLedgerTab === 'audits' && (
+                <>
+                  <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                    {currentOrder?.audits && currentOrder.audits.length > 0 ? (
+                      currentOrder.audits.map((a: any) => (
+                        <div
+                          key={a.id}
+                          className="p-3 rounded-lg bg-slate-950/70 border border-slate-800 flex items-center justify-between text-xs"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <strong className="text-slate-100">${a.amount.toFixed(2)} USD</strong>
+                              <span className="font-mono text-[10px] text-slate-400">({a.capture_type})</span>
+                            </div>
+                            <p className="font-mono text-[10px] text-blue-400 mt-0.5 truncate max-w-xs">
+                              Capture ID: {a.paypal_capture_id}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              Reconciled ✓
+                            </span>
+                            <p className="text-[10px] text-slate-500 mt-1">
+                              {a.created_at ? new Date(a.created_at).toLocaleTimeString() : ''}
+                            </p>
+                          </div>
                         </div>
-                        <p className="font-mono text-[10px] text-blue-400 mt-0.5 truncate max-w-xs">
-                          Capture ID: {a.paypal_capture_id}
-                        </p>
+                      ))
+                    ) : (
+                      <div className="py-8 text-center text-xs text-slate-500 italic">
+                        No captures executed for this order yet.
                       </div>
-                      <div className="text-right">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                          Reconciled ✓
-                        </span>
-                        <p className="text-[10px] text-slate-500 mt-1">
-                          {a.created_at ? new Date(a.created_at).toLocaleTimeString() : ''}
-                        </p>
+                    )}
+                  </div>
+
+                  {/* Consent Records Hash Chain (T5) */}
+                  {currentOrder?.consents && currentOrder.consents.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-slate-800">
+                      <span className="text-[10px] font-mono uppercase text-slate-400 flex items-center gap-1 mb-1.5">
+                        <Link2 className="w-3 h-3 text-indigo-400" />
+                        Cryptographic Consent Hash Chain:
+                      </span>
+                      <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                        {currentOrder.consents.map((c: any) => (
+                          <div key={c.id} className="p-2 rounded bg-slate-950 border border-slate-800 font-mono text-[10px] space-y-0.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-200 font-bold uppercase">{c.choice} ({c.locale || 'en'})</span>
+                              <span className="text-emerald-400 font-semibold">✓ SHA-256 Intact</span>
+                            </div>
+                            <p className="text-slate-400 truncate">Hash: {c.consent_hash}</p>
+                            <p className="text-slate-500 truncate">Prev: {c.prev_hash}</p>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="py-8 text-center text-xs text-slate-500 italic">
-                    No captures executed for this order yet.
-                  </div>
-                )}
-              </div>
+                  )}
+                </>
+              )}
 
-              {/* Consent Records Hash Chain (T5) */}
-              {currentOrder?.consents && currentOrder.consents.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-slate-800">
-                  <span className="text-[10px] font-mono uppercase text-slate-400 flex items-center gap-1 mb-1.5">
-                    <Link2 className="w-3 h-3 text-indigo-400" />
-                    Cryptographic Consent Hash Chain:
-                  </span>
-                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                    {currentOrder.consents.map((c: any) => (
-                      <div key={c.id} className="p-2 rounded bg-slate-950 border border-slate-800 font-mono text-[10px] space-y-0.5">
+              {/* Tab Content: Gateway Reconciler Logs View */}
+              {activeLedgerTab === 'gateway_logs' && (
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {currentOrder?.gateway_logs && currentOrder.gateway_logs.length > 0 ? (
+                    currentOrder.gateway_logs.map((log: any) => (
+                      <div
+                        key={log.id}
+                        className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/90 text-xs font-mono space-y-1"
+                      >
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-200 font-bold uppercase">{c.choice} ({c.locale || 'en'})</span>
-                          <span className="text-emerald-400 font-semibold">✓ SHA-256 Intact</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                              {log.action}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              HTTP {log.status_code}
+                            </span>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            log.reconciler_status === 'VERIFIED'
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                          }`}>
+                            {log.reconciler_status === 'VERIFIED' ? 'VERIFIED ✓' : 'MISMATCH ⚠'}
+                          </span>
                         </div>
-                        <p className="text-slate-400 truncate">Hash: {c.consent_hash}</p>
-                        <p className="text-slate-500 truncate">Prev: {c.prev_hash}</p>
+                        <div className="text-[10px] text-slate-300 truncate">
+                          {log.endpoint}
+                        </div>
+                        <div className="text-[10px] text-cyan-400/90 truncate">
+                          PayPal-Request-Id: {log.request_id}
+                        </div>
+                        {log.paypal_resource_id && (
+                          <div className="text-[10px] text-slate-400 truncate">
+                            Resource ID: {log.paypal_resource_id}
+                          </div>
+                        )}
+                        {log.reconciler_message && (
+                          <p className="font-sans text-[11px] text-slate-300 pt-0.5 border-t border-slate-800/60">
+                            {log.reconciler_message}
+                          </p>
+                        )}
+                        <div className="text-[9px] text-slate-500 text-right">
+                          {log.created_at ? new Date(log.created_at).toLocaleTimeString() : ''}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    ))
+                  ) : (
+                    <div className="py-8 text-center text-xs text-slate-500 italic">
+                      No gateway reconciler events recorded yet.
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -82,6 +82,7 @@ class OrderModel(Base):
     delay_notices = relationship("DelayNoticeModel", back_populates="order", cascade="all, delete-orphan")
     consent_records = relationship("BuyerConsentModel", back_populates="order", cascade="all, delete-orphan")
     capture_audits = relationship("CaptureAuditModel", back_populates="order", cascade="all, delete-orphan")
+    gateway_logs = relationship("GatewayEventLogModel", back_populates="order", cascade="all, delete-orphan")
 
 
 class LineItemModel(Base):
@@ -158,6 +159,24 @@ class CaptureAuditModel(Base):
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     order = relationship("OrderModel", back_populates="capture_audits")
+
+
+class GatewayEventLogModel(Base):
+    __tablename__ = "gateway_event_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    action = Column(String(32), nullable=False)  # "CREATE_ORDER" | "AUTHORIZE" | "PARTIAL_CAPTURE" | "FINAL_CAPTURE" | "VOID" | "RECONCILE" | "IDEMPOTENCY_REPLAY"
+    request_id = Column(String(64), nullable=False)  # PayPal-Request-Id
+    endpoint = Column(String(256), nullable=False)
+    status_code = Column(Integer, nullable=False, default=200)
+    reconciler_status = Column(String(16), nullable=False, default="VERIFIED")  # "VERIFIED" | "MISMATCH" | "ERROR"
+    reconciler_message = Column(Text, nullable=True)
+    paypal_resource_id = Column(String(64), nullable=True)  # auth_id or capture_id or order_id
+    payload_summary = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    order = relationship("OrderModel", back_populates="gateway_logs")
 
 
 # ── Pydantic Schemas ─────────────────────────────────────────────

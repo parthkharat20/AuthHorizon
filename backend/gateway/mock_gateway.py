@@ -24,6 +24,11 @@ class MockPayPalGateway(PayPalGatewayInterface):
         if self.simulate_network_timeout:
             raise TimeoutError("Simulated PayPal gateway timeout on create_order")
 
+        # Idempotency replay check
+        for existing_ord in self.orders.values():
+            if existing_ord.get("request_id") == request_id:
+                return existing_ord
+
         order_id = f"MOCK-ORD-{uuid.uuid4().hex[:12].upper()}"
         order_obj = {
             "id": order_id,
@@ -46,6 +51,11 @@ class MockPayPalGateway(PayPalGatewayInterface):
     def authorize_order(self, paypal_order_id: str, request_id: str) -> Dict[str, Any]:
         if self.simulate_network_timeout:
             raise TimeoutError("Simulated PayPal gateway timeout on authorize_order")
+
+        # Idempotency replay check
+        for existing_auth in self.authorizations.values():
+            if existing_auth.get("request_id") == request_id:
+                return existing_auth
 
         order = self.orders.get(paypal_order_id)
         if not order:
@@ -73,6 +83,11 @@ class MockPayPalGateway(PayPalGatewayInterface):
     def capture_authorization(self, auth_id: str, amount: float, final_capture: bool, request_id: str, note: str = "") -> Dict[str, Any]:
         if self.simulate_network_timeout:
             raise TimeoutError("Simulated PayPal gateway timeout on capture_authorization")
+
+        # Idempotency replay check: if request_id matches an existing capture, return it
+        for existing_cap in self.captures.values():
+            if existing_cap.get("request_id") == request_id:
+                return existing_cap
 
         auth = self.authorizations.get(auth_id)
         if not auth:

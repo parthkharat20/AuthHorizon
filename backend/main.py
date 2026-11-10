@@ -369,8 +369,8 @@ def parse_supplier_notice(
     ]
     matched_item, match_score = match_item_in_order(extraction.item_identifier, order_items_dict)
 
-    # Deterministic Review Routing
-    needs_review, review_reason = evaluate_review_routing(extraction, matched_item)
+    # Deterministic Review Routing with Grounding Check
+    needs_review, review_reason = evaluate_review_routing(extraction, matched_item, raw_notice_text=req.raw_text)
     notice_status = NoticeStatus.PENDING_REVIEW if needs_review else NoticeStatus.APPROVED
 
     # If matched and approved, mark item as DELAYED

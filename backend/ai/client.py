@@ -113,9 +113,10 @@ class AIParserClient:
                 confidence_reason=Confidence.HIGH
             )
         else:
+            from datetime import date, timedelta
             return AIExtractionResult(
                 item_identifier="Unknown Component",
-                new_ship_date="Pending",
+                new_ship_date=(date.today() + timedelta(days=14)).isoformat(),
                 reason="Unspecified supplier logistics delay",
                 language="en",
                 confidence_item=Confidence.LOW,

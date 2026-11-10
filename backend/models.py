@@ -190,27 +190,90 @@ class DelayNoticeInput(BaseModel):
 
 
 class AIExtractionResult(BaseModel):
-    """Strict schema for AI extraction output. No currency or amount fields allowed."""
+    """Strict schema for AI extraction output. No currency, prices, or digits in text fields."""
     item_identifier: str = Field(description="SKU or product name mentioned in the notice")
-    new_ship_date: str = Field(description="ISO date YYYY-MM-DD or descriptive like 'mid-November'")
-    reason: str = Field(description="Reason for delay, one sentence")
-    language: str = Field(description="ISO 639-1 code of the notice language, e.g. 'en', 'de', 'da'")
+    new_ship_date: str = Field(description="Strict ISO date YYYY-MM-DD")
+    reason: str = Field(description="Reason for delay, one sentence without digits, URLs, or currency terms")
+    language: str = Field(description="ISO 639-1 code of notice language, e.g. 'en', 'de', 'da', 'ja'")
     confidence_item: Confidence
     confidence_date: Confidence
     confidence_reason: Confidence
 
-    @field_validator("item_identifier", "new_ship_date", "reason")
+    @field_validator("new_ship_date")
     @classmethod
-    def reject_currency_symbols(cls, v: str) -> str:
-        forbidden = {"$", "€", "£", "¥", "₹", "kr", "USD", "EUR", "GBP"}
-        for symbol in forbidden:
-            if symbol in v:
-                raise ValueError(f"AI output must not contain currency symbols or codes. Found '{symbol}' in '{v}'")
-        # Also reject any digit sequence that looks like a price (e.g. "30.00")
-        import re
-        if re.search(r'\d+\.\d{2}', v):
-            raise ValueError(f"AI output must not contain price-like values. Found in '{v}'")
-        return v
+    def validate_new_ship_date(cls, v: str) -> str:
+        import re, unicodedata
+        from datetime import datetime, date, timedelta
+        s = unicodedata.normalize('NFKC', str(v).strip())
+        
+        # Dotted German/Danish date normalization (e.g. 22.11.2026 -> 2026-11-22)
+        m = re.match(r'^(\d{1,2})\.(\d{1,2})\.(\d{4})$', s)
+        if m:
+            d, m_val, y = m.groups()
+            s = f"{y}-{m_val.zfill(2)}-{d.zfill(2)}"
+        elif re.match(r'^(\d{4})\.(\d{1,2})\.(\d{1,2})$', s):
+            y, m_val, d = re.match(r'^(\d{4})\.(\d{1,2})\.(\d{1,2})$', s).groups()
+            s = f"{y}-{m_val.zfill(2)}-{d.zfill(2)}"
+
+        if not re.match(r'^\d{4}-\d{2}-\d{2}$', s):
+            raise ValueError(f"Safety Gate Violation: new_ship_date '{v}' must match YYYY-MM-DD format")
+        
+        try:
+            parsed = datetime.strptime(s, "%Y-%m-%d").date()
+        except ValueError as e:
+            raise ValueError(f"Safety Gate Violation: Invalid calendar date '{s}': {e}")
+            
+        today = date.today()
+        if parsed < today:
+            raise ValueError(f"Safety Gate Violation: new_ship_date '{s}' is in the past (today: {today})")
+        if parsed > today + timedelta(days=365):
+            raise ValueError(f"Safety Gate Violation: new_ship_date '{s}' exceeds 1-year future threshold")
+            
+        return s
+
+    @field_validator("reason")
+    @classmethod
+    def validate_reason(cls, v: str) -> str:
+        import re, unicodedata
+        s = unicodedata.normalize('NFKC', str(v))
+        if re.search(r'https?://|www\.', s, re.IGNORECASE):
+            raise ValueError(f"Safety Gate Violation: reason must not contain URLs")
+        for ch in s:
+            cat = unicodedata.category(ch)
+            if cat == 'Nd':
+                raise ValueError(f"Safety Gate Violation: reason must not contain digits ('{ch}', category Nd). Only new_ship_date may contain digits.")
+            if cat == 'Sc':
+                raise ValueError(f"Safety Gate Violation: reason must not contain currency symbol '{ch}' (category Sc)")
+        currency_words = {
+            "dollar", "dollars", "cent", "cents", "usd", "eur", "euro", "euros",
+            "pound", "pounds", "gbp", "yen", "jpy", "krone", "kroner", "dkk",
+            "buck", "bucks", "cash", "refund", "charge", "payment", "price", "fee",
+            "pfennig", "pfennige", "kronen", "geld", "erstattung", "rückerstattung", "zahlung", "gebühr", "kosten",
+            "øre", "betaling", "refusion", "omkostning",
+            "円", "ドル", "ユーロ", "ポンド", "セント", "通貨", "金額", "返金", "支払い", "価格", "費用"
+        }
+        words = set(re.findall(r'\b[a-zæøåäöüß]+\b', s.lower()))
+        found = words.intersection(currency_words)
+        if found:
+            raise ValueError(f"Safety Gate Violation: reason must not contain currency terms: {sorted(list(found))}")
+        for ja in {"円", "ドル", "ユーロ", "ポンド", "セント", "返金", "支払い", "価格", "費用"}:
+            if ja in s:
+                raise ValueError(f"Safety Gate Violation: reason must not contain Japanese currency term '{ja}'")
+        return s
+
+    @field_validator("item_identifier")
+    @classmethod
+    def validate_item_identifier(cls, v: str) -> str:
+        import re, unicodedata
+        s = unicodedata.normalize('NFKC', str(v))
+        for ch in s:
+            if unicodedata.category(ch) == 'Sc':
+                raise ValueError(f"Safety Gate Violation: item_identifier must not contain currency symbol '{ch}'")
+        currency_words = {"dollar", "dollars", "usd", "eur", "euro", "gbp", "yen", "krone", "kroner", "cash", "refund"}
+        words = set(re.findall(r'\b[a-zæøåäöüß]+\b', s.lower()))
+        if words.intersection(currency_words):
+            raise ValueError("Safety Gate Violation: item_identifier must not contain currency terms")
+        return s
 
 
 class ConsentSubmitRequest(BaseModel):

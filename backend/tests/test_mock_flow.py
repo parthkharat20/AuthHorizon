@@ -9,8 +9,7 @@ from backend.reconciler import PaymentReconciler
 from backend.ai.validator import (
     sanitize_and_validate_extraction,
     match_item_in_order,
-    evaluate_review_routing,
-    FORBIDDEN_CURRENCY_PATTERNS
+    evaluate_review_routing
 )
 from backend.models import (
     AIExtractionResult,
@@ -160,7 +159,7 @@ def test_item_fuzzy_matching_and_review_routing():
     # Low confidence -> Flag for review
     low_conf_ext = AIExtractionResult(
         item_identifier="Ceramic Coating",
-        new_ship_date="Unknown",
+        new_ship_date="2026-11-20",
         reason="Delay",
         language="en",
         confidence_item=Confidence.HIGH,

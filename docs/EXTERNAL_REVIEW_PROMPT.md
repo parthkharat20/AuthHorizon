@@ -12,30 +12,30 @@ Your objective:
 ---
 
 ## 2. Problem Statement & Regulatory Context
-* **Background (not legal advice):** The FTC Mail, Internet or Telephone Order Rule (16 CFR 435) requires a seller who cannot ship on time to send a delay-option notice: consent to the delay, or cancel with a prompt refund. It does NOT ban pre-shipment charges. EU Consumer Rights Directive Art. 18 details are unverified; background only. AuthHorizon helps send the notice and capture only what ships; it does not guarantee compliance. Dispute tools elsewhere fight disputes after they happen; AuthHorizon prevents them.
-* **The AuthHorizon Solution:** A split-shipment fulfillment and consumer consent engine powered by PayPal REST API v2 and LLM notice intelligence.
-  - Multi-item orders are authorized up front (`intent: "AUTHORIZE"`).
-  - In-stock items are partially captured (`final_capture: false`).
-  - Unstructured, multilingual supplier delay notices (German, Danish, English) are ingested via AI.
-  - Buyers make consent choices (Wait, Swap, or Cancel) on a self-service portal.
-  - Deterministic Python code moves money via PayPal; cryptographic SHA-256 logs provide a tamper-evident audit trail.
+Background (not legal advice): the FTC Mail, Internet or Telephone Order Rule (16 CFR 435) requires a seller who cannot ship on time to send a delay-option notice: consent to the delay, or cancel with a prompt refund. It does NOT ban pre-shipment charges. EU Consumer Rights Directive Art. 18 details are unverified; background only. AuthHorizon helps send the notice and capture only what ships; it does not guarantee compliance. Dispute tools elsewhere fight disputes after they happen; AuthHorizon prevents them.
+
+**The AuthHorizon Solution:** A split-shipment fulfillment and consumer consent engine powered by PayPal REST API v2 and LLM notice intelligence.
+- Multi-item orders are authorized up front (`intent: "AUTHORIZE"`).
+- In-stock items are partially captured (`final_capture: false`).
+- Unstructured, multilingual supplier delay notices (German, Danish, English) are ingested via AI.
+- Buyers make consent choices (Wait, Swap, or Cancel) on a self-service portal.
+- Deterministic Python code moves money via PayPal; cryptographic SHA-256 logs provide a tamper-evident audit trail.
 
 ---
 
 ## 3. Non-Negotiable Financial Safety Boundary (Hard Rule)
 * **AI Never Moves Money:** The LLM is strictly treated as an untrusted parser and template drafter. The LLM **NEVER** calculates, outputs, or authorizes financial amounts.
 * **Deterministic Guardrails:**
-  - Gate (T2, being built): only `new_ship_date` may contain digits; reason has no digits or URLs; NFKC-normalize first; per-language currency and number words rejected; model confidence is advisory only (an injected notice can claim HIGH).
-  - Auto-approval needs grounding: the item identifier and date literal must appear in the source notice and match exactly one order item and one parsed date. Otherwise, review queue.
-  - All ledger amounts and PayPal payload amounts are calculated solely by deterministic Python code using database line-item amounts.
+- Gate (T2, being built): only new_ship_date may contain digits; reason has no digits or URLs; NFKC-normalize first; per-language currency and number words rejected; model confidence is advisory only (an injected notice can claim HIGH).
+- Auto-approval needs grounding: the item identifier and date literal must appear in the source notice and match exactly one order item and one parsed date. Otherwise, review queue.
 
 ---
 
 ## 4. Current Context, Status & Review Constraints
-* **STATUS:** T0 passed (Section 6). Do not re-litigate it. Tag every claim [doc], [test] or [assumed].
-* **CONSTRAINTS:** About 55 hours left, code freeze 2 PM IST Nov 12, solo dev plus a Gemini coding agent, free-tier LLMs, no new products. Each suggestion must fit in 3 hours or less.
-* **CROWDED LANES (do not suggest):** Agent spend guardrails or mandates, escrow with AI verification, dispute-response bots, shopping agents, analytics dashboards, invoicing bots.
-* **WEAK SPOTS TO ATTACK:** Reauth is mock-tested only; the Wait path near the 29-day limit; webhooks not yet verified on a public URL; consent-link authentication.
+STATUS: T0 passed (Section 6). Do not re-litigate it. Tag every claim [doc], [test] or [assumed].
+CONSTRAINTS: about 55 hours left, code freeze 2 PM IST Nov 12, solo dev plus a Gemini coding agent, free-tier LLMs, no new products. Each suggestion must fit in 3 hours or less.
+CROWDED LANES (do not suggest): agent spend guardrails or mandates, escrow with AI verification, dispute-response bots, shopping agents, analytics dashboards, invoicing bots.
+WEAK SPOTS TO ATTACK: reauth is mock-tested only; the Wait path near the 29-day limit; webhooks not yet verified on a public URL; consent-link authentication.
 
 ---
 
@@ -146,3 +146,4 @@ Remember constraints: **<3 hours per suggestion, solo dev + Gemini coding agent,
 4. **Hackathon Winning Edge & Demo Optimization:**
    - How can the UI/UX (Split-Hold Visualizer, AG Grid ledger, Buyer Portal) be tuned to make the 3-minute demo video instantly understandable and memorable to non-technical judges?
    - What high-leverage addition would best boost scores for **Innovation** and **Potential Impact** without blowing the budget?
+

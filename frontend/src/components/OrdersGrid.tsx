@@ -14,6 +14,8 @@ export interface OrderRow {
   held_amount: number;
   status: string;
   items_count?: number;
+  auth_expires_at?: string;
+  auth_days_remaining?: number | null;
   created_at: string;
 }
 
@@ -138,10 +140,11 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
     },
     {
       field: 'status',
-      headerName: 'Lifecycle Status',
-      width: 180,
+      headerName: 'Lifecycle Status & Hold Window',
+      width: 230,
       cellRenderer: (p: any) => {
         const val = p.value || 'CREATED';
+        const daysLeft = p.data?.auth_days_remaining;
         let badgeColor = 'bg-slate-700/60 text-slate-300 border-slate-600/50';
         let Icon = Clock;
 
@@ -160,11 +163,22 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
         }
 
         return (
-          <div className="flex items-center h-full">
+          <div className="flex items-center gap-1.5 h-full">
             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${badgeColor}`}>
               <Icon className="w-3 h-3 shrink-0" />
               {val}
             </span>
+            {daysLeft !== undefined && daysLeft !== null && (
+              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                daysLeft > 14
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : daysLeft >= 3
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20 animate-pulse'
+              }`} title="PayPal 29-day authorization hold countdown">
+                {daysLeft}d left
+              </span>
+            )}
           </div>
         );
       },

@@ -55,6 +55,11 @@ def init_db():
                     conn.commit()
                 except Exception:
                     pass
+            try:
+                conn.execute(text("ALTER TABLE orders ADD COLUMN auth_expires_at DATETIME"))
+                conn.commit()
+            except Exception:
+                pass
 
     # Auto-seed demo orders on fresh launch if DB is empty
     if os.getenv("AUTO_SEED_DEMO_DATA", "true").lower() == "true":
@@ -94,7 +99,8 @@ def seed_demo_data(db: Session):
         currency="USD",
         status=OrderStatus.AUTHORIZED,
         created_at=now - timedelta(hours=2),
-        auth_created_at=now - timedelta(hours=2)
+        auth_created_at=now - timedelta(hours=2),
+        auth_expires_at=now - timedelta(hours=2) + timedelta(days=29)
     )
     db.add(ord1)
     db.flush()
@@ -135,7 +141,8 @@ def seed_demo_data(db: Session):
         currency="USD",
         status=OrderStatus.PARTIALLY_CAPTURED,
         created_at=now - timedelta(hours=5),
-        auth_created_at=now - timedelta(hours=5)
+        auth_created_at=now - timedelta(hours=5),
+        auth_expires_at=now - timedelta(hours=5) + timedelta(days=29)
     )
     db.add(ord2)
     db.flush()

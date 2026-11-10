@@ -274,6 +274,8 @@ def authorize_order(
     order.status = OrderStatus.AUTHORIZED
     order.held_amount = order.total_amount
     order.auth_created_at = datetime.now(timezone.utc)
+    from datetime import timedelta
+    order.auth_expires_at = order.auth_created_at + timedelta(days=29)
 
     gw_log = GatewayEventLogModel(
         order_id=order.id,
@@ -294,7 +296,9 @@ def authorize_order(
         "auth_id": auth_id,
         "status": order.status.value,
         "held_amount": order.held_amount,
-        "captured_amount": order.captured_amount
+        "captured_amount": order.captured_amount,
+        "auth_expires_at": order.auth_expires_at.isoformat() if getattr(order, "auth_expires_at", None) else None,
+        "days_remaining": 29
     }
 
 
@@ -841,11 +845,41 @@ def localize_order_message(
     }
 
 
+# ── Auth Expiry Intelligence (PayPal 29-Day Limit) ───────────────
+
+@app.get("/api/orders/expiring-soon")
+def get_expiring_authorizations(db: Session = Depends(get_db)):
+    """Returns active authorization holds expiring within 7 days (PayPal 29-day hold limit)."""
+    from datetime import timedelta
+    now_utc = datetime.now(timezone.utc)
+    cutoff = now_utc + timedelta(days=7)
+    orders = db.query(OrderModel).filter(
+        OrderModel.auth_expires_at != None,
+        OrderModel.auth_expires_at <= cutoff,
+        OrderModel.status.in_([OrderStatus.AUTHORIZED, OrderStatus.PARTIALLY_CAPTURED])
+    ).all()
+    return [{
+        "id": o.id,
+        "paypal_order_id": o.paypal_order_id,
+        "auth_id": o.auth_id,
+        "auth_expires_at": o.auth_expires_at.isoformat(),
+        "days_remaining": max(0, ((o.auth_expires_at.date() if hasattr(o.auth_expires_at, 'date') else o.auth_expires_at) - now_utc.date()).days),
+        "held_amount": o.held_amount,
+        "status": o.status.value
+    } for o in orders]
+
+
 @app.get("/api/orders/{order_id}")
 def get_order_details(order_id: int, db: Session = Depends(get_db)):
     order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    days_remaining = None
+    if getattr(order, "auth_expires_at", None) and order.status in (OrderStatus.AUTHORIZED, OrderStatus.PARTIALLY_CAPTURED):
+        now_utc = datetime.now(timezone.utc)
+        exp_date = order.auth_expires_at.date() if hasattr(order.auth_expires_at, "date") else order.auth_expires_at
+        days_remaining = max(0, (exp_date - now_utc.date()).days)
 
     return {
         "id": order.id,
@@ -857,6 +891,9 @@ def get_order_details(order_id: int, db: Session = Depends(get_db)):
         "status": order.status.value,
         "currency": order.currency,
         "created_at": order.created_at.isoformat() if order.created_at else None,
+        "auth_created_at": order.auth_created_at.isoformat() if order.auth_created_at else None,
+        "auth_expires_at": order.auth_expires_at.isoformat() if getattr(order, "auth_expires_at", None) else None,
+        "auth_days_remaining": days_remaining,
         "items": [
             {
                 "id": it.id,
@@ -1119,8 +1156,15 @@ def test_idempotency_replay(
 @app.get("/api/orders")
 def list_orders(db: Session = Depends(get_db)):
     orders = db.query(OrderModel).order_by(OrderModel.id.desc()).all()
-    return [
-        {
+    now_utc = datetime.now(timezone.utc)
+    res = []
+    for o in orders:
+        days_rem = None
+        if getattr(o, "auth_expires_at", None) and o.status in (OrderStatus.AUTHORIZED, OrderStatus.PARTIALLY_CAPTURED):
+            exp_date = o.auth_expires_at.date() if hasattr(o.auth_expires_at, "date") else o.auth_expires_at
+            days_rem = max(0, (exp_date - now_utc.date()).days)
+
+        res.append({
             "id": o.id,
             "paypal_order_id": o.paypal_order_id,
             "auth_id": o.auth_id,
@@ -1129,10 +1173,11 @@ def list_orders(db: Session = Depends(get_db)):
             "held_amount": o.held_amount,
             "status": o.status.value,
             "items_count": len(o.line_items),
+            "auth_expires_at": o.auth_expires_at.isoformat() if getattr(o, "auth_expires_at", None) else None,
+            "auth_days_remaining": days_rem,
             "created_at": o.created_at.isoformat() if o.created_at else None
-        }
-        for o in orders
-    ]
+        })
+    return res
 
 
 # ── AI Safety & Eval Benchmark (T7) ──────────────────────────────

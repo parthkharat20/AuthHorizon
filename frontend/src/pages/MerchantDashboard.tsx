@@ -327,6 +327,36 @@ export const MerchantDashboard: React.FC = () => {
           status={currentOrder?.status || 'CREATED'}
         />
 
+        {/* 29-Day PayPal Authorization Expiry Intelligence Banner */}
+        {currentOrder?.auth_days_remaining !== undefined && currentOrder?.auth_days_remaining !== null && (
+          <div className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono shadow-xl transition-all ${
+            currentOrder.auth_days_remaining > 14
+              ? 'bg-emerald-950/25 border-emerald-800/40 text-emerald-300'
+              : currentOrder.auth_days_remaining >= 3
+              ? 'bg-amber-950/35 border-amber-800/50 text-amber-300'
+              : 'bg-rose-950/50 border-rose-700/60 text-rose-300 animate-pulse'
+          }`}>
+            <div className="flex items-center gap-2.5">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                currentOrder.auth_days_remaining > 14 ? 'bg-emerald-400' : currentOrder.auth_days_remaining >= 3 ? 'bg-amber-400 animate-pulse' : 'bg-rose-400 animate-ping'
+              }`} />
+              <div>
+                <span className="font-bold text-sm tracking-tight text-white flex items-center gap-2">
+                  PayPal 29-Day Hold Window: {currentOrder.auth_days_remaining} Day{currentOrder.auth_days_remaining === 1 ? '' : 's'} Remaining
+                </span>
+                <p className="text-[11px] opacity-80 font-sans mt-0.5 text-slate-300">
+                  Hold authorized on {currentOrder.auth_created_at ? new Date(currentOrder.auth_created_at).toLocaleDateString() : 'N/A'}. Consumer delay consent required under FTC 16 CFR Part 435 before hold expiry.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/50 border border-white/10 text-slate-200">
+                Hold Expires: {currentOrder.auth_expires_at ? new Date(currentOrder.auth_expires_at).toLocaleDateString() : 'N/A'}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Center Grid: AI Parser + Capture Ledger */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Supplier Delay Notice Ingestion */}

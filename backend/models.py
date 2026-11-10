@@ -77,6 +77,7 @@ class OrderModel(Base):
     updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc),
                         onupdate=lambda: datetime.now(timezone.utc))
     auth_created_at = Column(DateTime, nullable=True)  # When PayPal auth was placed
+    auth_expires_at = Column(DateTime, nullable=True)  # PayPal 29-day authorization hold limit
 
     line_items = relationship("LineItemModel", back_populates="order", cascade="all, delete-orphan")
     delay_notices = relationship("DelayNoticeModel", back_populates="order", cascade="all, delete-orphan")

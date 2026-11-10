@@ -102,31 +102,42 @@ def test_paypal_mode_switcher_selection(monkeypatch):
 
 def test_auth_expiry_intelligence_29_days():
     """Verify authorization sets 29-day expiration window and reports days_remaining."""
-    client = TestClient(app)
-    c_res = client.post("/api/orders/create", json={
-        "items": [{"sku": "SKU-EXP-01", "name": "Sensor Unit", "amount": 90.0, "quantity": 1}],
-        "currency": "USD"
-    })
-    order_id = c_res.json()["order_id"]
+    mock_gw = MockPayPalGateway()
+    app.dependency_overrides[get_gateway] = lambda: mock_gw
+    try:
+        client = TestClient(app)
+        c_res = client.post("/api/orders/create", json={
+            "items": [{"sku": "SKU-EXP-01", "name": "Sensor Unit", "amount": 90.0, "quantity": 1}],
+            "currency": "USD"
+        })
+        assert c_res.status_code == 200
+        order_id = c_res.json()["order_id"]
 
-    auth_res = client.post(f"/api/orders/{order_id}/authorize")
-    assert auth_res.status_code == 200
-    auth_data = auth_res.json()
-    assert "auth_expires_at" in auth_data
-    assert auth_data["days_remaining"] == 29
+        auth_res = client.post(f"/api/orders/{order_id}/authorize")
+        assert auth_res.status_code == 200
+        auth_data = auth_res.json()
+        assert "auth_expires_at" in auth_data
+        assert auth_data["days_remaining"] == 29
 
-    # Verify get_order_details returns auth_days_remaining
-    det_res = client.get(f"/api/orders/{order_id}")
-    assert det_res.status_code == 200
-    det_data = det_res.json()
-    assert det_data["auth_days_remaining"] == 29
-    assert "auth_expires_at" in det_data
+        # Verify get_order_details returns auth_days_remaining
+        det_res = client.get(f"/api/orders/{order_id}")
+        assert det_res.status_code == 200
+        det_data = det_res.json()
+        assert det_data["auth_days_remaining"] == 29
+        assert "auth_expires_at" in det_data
+    finally:
+        app.dependency_overrides.pop(get_gateway, None)
 
 
 def test_expiring_soon_endpoint():
     """Verify /api/orders/expiring-soon lists active authorizations near expiration."""
-    client = TestClient(app)
-    res = client.get("/api/orders/expiring-soon")
-    assert res.status_code == 200
-    assert isinstance(res.json(), list)
+    mock_gw = MockPayPalGateway()
+    app.dependency_overrides[get_gateway] = lambda: mock_gw
+    try:
+        client = TestClient(app)
+        res = client.get("/api/orders/expiring-soon")
+        assert res.status_code == 200
+        assert isinstance(res.json(), list)
+    finally:
+        app.dependency_overrides.pop(get_gateway, None)
 

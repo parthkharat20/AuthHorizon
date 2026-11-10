@@ -62,7 +62,7 @@ def main():
         "line_items": order_data.get("items", []),
         "delay_notices": order_data.get("delay_notices", []),
         "buyer_consents": order_data.get("consents", []),
-        "captures_audit": order_data.get("captures", []),
+        "captures_audit": order_data.get("audits", []),
         "paypal_verifications": {}
     }
 
@@ -88,7 +88,8 @@ def main():
 
     # 3. Verify Captures via GET
     t1_record["paypal_verifications"]["captures"] = []
-    for cap in order_data.get("captures", []):
+    audits = order_data.get("audits", []) or order_data.get("captures", [])
+    for cap in audits:
         cap_id = cap.get("paypal_capture_id")
         if cap_id:
             res_c = requests.get(f"{PAYPAL_API_BASE}/v2/payments/captures/{cap_id}", headers={"Authorization": f"Bearer {token}"})

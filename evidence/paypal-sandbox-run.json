@@ -429,5 +429,457 @@
       "auth_status_via_get": "VOIDED",
       "note": "Authorization successfully VOIDED after partial capture, releasing remaining hold."
     }
+  },
+  "t1_ui_flow": {
+    "verified_at": "2026-11-10T13:45:04Z",
+    "local_order_id": 6,
+    "paypal_order_id": "81R116453E1577428",
+    "auth_id": "4XB76663P4018954X",
+    "local_order_status": "COMPLETED",
+    "total_amount": 90.0,
+    "captured_amount": 88.0,
+    "held_amount": 0.0,
+    "line_items": [
+      {
+        "id": 14,
+        "sku": "SKU-BEAR-01",
+        "name": "Precision Bearings (Set of 4)",
+        "amount": 30.0,
+        "quantity": 1,
+        "status": "SHIPPED",
+        "is_delayed": false
+      },
+      {
+        "id": 15,
+        "sku": "SKU-PUMP-02",
+        "name": "Hydraulic Pump Assembly",
+        "amount": 30.0,
+        "quantity": 1,
+        "status": "SHIPPED",
+        "is_delayed": false
+      },
+      {
+        "id": 16,
+        "sku": "SKU-COAT-03",
+        "name": "Ceramic Coating Kit Industrial",
+        "amount": 30.0,
+        "quantity": 1,
+        "status": "DELAYED",
+        "is_delayed": true
+      }
+    ],
+    "delay_notices": [
+      {
+        "id": 4,
+        "extracted_sku": "SKU-COAT-03",
+        "extracted_item_name": "Ceramic Coating Kit Industrial",
+        "new_ship_date": "2026-11-20",
+        "reason": "Supplier raw material batch shipment delay",
+        "status": "APPROVED",
+        "confidence_sku": "HIGH",
+        "created_at": "2026-11-10T12:15:18.323791"
+      }
+    ],
+    "buyer_consents": [
+      {
+        "id": 4,
+        "choice": "WAIT",
+        "displayed_text": "Buyer consented to wait for 'Ceramic Coating Kit Industrial'. Holding $30.00 until revised fulfillment.",
+        "consent_hash": "1165eb6e78ecfa8a10d59177d007801c8b51b6b36e4b350b871e3541ea2041cc",
+        "timestamp": "2026-11-10T12:15:49.614496"
+      },
+      {
+        "id": 5,
+        "choice": "SWAP",
+        "displayed_text": "Buyer consented to swap 'Ceramic Coating Kit Industrial' for 'Alternative Ceramic Coating Set' at $28.00.",
+        "consent_hash": "2c49c47bac3777143319ed153f2d07d9a0e34cf4d33f0a408a73e440a970c383",
+        "timestamp": "2026-11-10T12:16:31.005942"
+      }
+    ],
+    "captures_audit": [
+      {
+        "id": 8,
+        "paypal_capture_id": "1C279227TA561915V",
+        "amount": 60.0,
+        "final_capture": false,
+        "capture_type": "IN_STOCK_SHIPMENT",
+        "webhook_verified": false,
+        "created_at": "2026-11-10T12:14:35.602713"
+      },
+      {
+        "id": 9,
+        "paypal_capture_id": "63D932488L0168405",
+        "amount": 28.0,
+        "final_capture": true,
+        "capture_type": "SWAP",
+        "webhook_verified": false,
+        "created_at": "2026-11-10T12:16:31.006326"
+      }
+    ],
+    "paypal_verifications": {
+      "order": {
+        "http_status": 200,
+        "status": "COMPLETED",
+        "data": {
+          "id": "81R116453E1577428",
+          "intent": "AUTHORIZE",
+          "status": "COMPLETED",
+          "payment_source": {
+            "paypal": {
+              "email_address": "sb-j0o2b53832644@personal.example.com",
+              "account_id": "YCEFYGPRF5JBW",
+              "account_status": "VERIFIED",
+              "name": {
+                "given_name": "John",
+                "surname": "Doe"
+              },
+              "address": {
+                "country_code": "US"
+              }
+            }
+          },
+          "purchase_units": [
+            {
+              "reference_id": "PU-d48a3fa6",
+              "amount": {
+                "currency_code": "USD",
+                "value": "90.00",
+                "breakdown": {
+                  "item_total": {
+                    "currency_code": "USD",
+                    "value": "90.00"
+                  }
+                }
+              },
+              "payee": {
+                "email_address": "sb-libm953823057@business.example.com",
+                "merchant_id": "SE6RGDKLQ8K6J"
+              },
+              "items": [
+                {
+                  "name": "Precision Bearings (Set of 4)",
+                  "unit_amount": {
+                    "currency_code": "USD",
+                    "value": "30.00"
+                  },
+                  "quantity": "1",
+                  "sku": "SKU-BEAR-01",
+                  "category": "PHYSICAL_GOODS"
+                },
+                {
+                  "name": "Hydraulic Pump Assembly",
+                  "unit_amount": {
+                    "currency_code": "USD",
+                    "value": "30.00"
+                  },
+                  "quantity": "1",
+                  "sku": "SKU-PUMP-02",
+                  "category": "PHYSICAL_GOODS"
+                },
+                {
+                  "name": "Ceramic Coating Kit Industrial",
+                  "unit_amount": {
+                    "currency_code": "USD",
+                    "value": "30.00"
+                  },
+                  "quantity": "1",
+                  "sku": "SKU-COAT-03",
+                  "category": "PHYSICAL_GOODS"
+                }
+              ],
+              "shipping": {
+                "name": {
+                  "full_name": "John Doe"
+                },
+                "address": {
+                  "address_line_1": "2211 N First St",
+                  "admin_area_2": "San Jose",
+                  "admin_area_1": "CA",
+                  "postal_code": "95131",
+                  "country_code": "US"
+                }
+              },
+              "payments": {
+                "authorizations": [
+                  {
+                    "status": "CAPTURED",
+                    "id": "4XB76663P4018954X",
+                    "amount": {
+                      "currency_code": "USD",
+                      "value": "90.00"
+                    },
+                    "seller_protection": {
+                      "status": "ELIGIBLE",
+                      "dispute_categories": [
+                        "ITEM_NOT_RECEIVED",
+                        "UNAUTHORIZED_TRANSACTION"
+                      ]
+                    },
+                    "expiration_time": "2026-12-09T12:14:24Z",
+                    "links": [
+                      {
+                        "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/4XB76663P4018954X",
+                        "rel": "self",
+                        "method": "GET"
+                      },
+                      {
+                        "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/4XB76663P4018954X/capture",
+                        "rel": "capture",
+                        "method": "POST"
+                      },
+                      {
+                        "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/4XB76663P4018954X/void",
+                        "rel": "void",
+                        "method": "POST"
+                      },
+                      {
+                        "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/4XB76663P4018954X/reauthorize",
+                        "rel": "reauthorize",
+                        "method": "POST"
+                      },
+                      {
+                        "href": "https://api.sandbox.paypal.com/v2/checkout/orders/81R116453E1577428",
+                        "rel": "up",
+                        "method": "GET"
+                      }
+                    ],
+                    "create_time": "2026-11-10T12:14:24Z",
+                    "update_time": "2026-11-10T12:16:29Z"
+                  }
+                ],
+                "captures": [
+                  {
+                    "id": "63D932488L0168405",
+                    "status": "COMPLETED",
+                    "amount": {
+                      "currency_code": "USD",
+                      "value": "28.00"
+                    },
+                    "final_capture": true,
+                    "disbursement_mode": "INSTANT",
+                    "seller_protection": {
+                      "status": "ELIGIBLE",
+                      "dispute_categories": [
+                        "ITEM_NOT_RECEIVED",
+                        "UNAUTHORIZED_TRANSACTION"
+                      ]
+                    },
+                    "seller_receivable_breakdown": {
+                      "gross_amount": {
+                        "currency_code": "USD",
+                        "value": "28.00"
+                      },
+                      "paypal_fee": {
+                        "currency_code": "USD",
+                        "value": "1.64"
+                      },
+                      "net_amount": {
+                        "currency_code": "USD",
+                        "value": "26.36"
+                      }
+                    },
+                    "links": [
+                      {
+                        "href": "https://api.sandbox.paypal.com/v2/payments/captures/63D932488L0168405",
+                        "rel": "self",
+                        "method": "GET"
+                      },
+                      {
+                        "href": "https://api.sandbox.paypal.com/v2/payments/captures/63D932488L0168405/refund",
+                        "rel": "refund",
+                        "method": "POST"
+                      },
+                      {
+                        "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/4XB76663P4018954X",
+                        "rel": "up",
+                        "method": "GET"
+                      }
+                    ],
+                    "create_time": "2026-11-10T12:16:29Z",
+                    "update_time": "2026-11-10T12:16:29Z"
+                  },
+                  {
+                    "id": "1C279227TA561915V",
+                    "status": "COMPLETED",
+                    "amount": {
+                      "currency_code": "USD",
+                      "value": "60.00"
+                    },
+                    "final_capture": true,
+                    "disbursement_mode": "INSTANT",
+                    "seller_protection": {
+                      "status": "ELIGIBLE",
+                      "dispute_categories": [
+                        "ITEM_NOT_RECEIVED",
+                        "UNAUTHORIZED_TRANSACTION"
+                      ]
+                    },
+                    "seller_receivable_breakdown": {
+                      "gross_amount": {
+                        "currency_code": "USD",
+                        "value": "60.00"
+                      },
+                      "paypal_fee": {
+                        "currency_code": "USD",
+                        "value": "3.12"
+                      },
+                      "net_amount": {
+                        "currency_code": "USD",
+                        "value": "56.88"
+                      }
+                    },
+                    "links": [
+                      {
+                        "href": "https://api.sandbox.paypal.com/v2/payments/captures/1C279227TA561915V",
+                        "rel": "self",
+                        "method": "GET"
+                      },
+                      {
+                        "href": "https://api.sandbox.paypal.com/v2/payments/captures/1C279227TA561915V/refund",
+                        "rel": "refund",
+                        "method": "POST"
+                      },
+                      {
+                        "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/4XB76663P4018954X",
+                        "rel": "up",
+                        "method": "GET"
+                      }
+                    ],
+                    "create_time": "2026-11-10T12:14:33Z",
+                    "update_time": "2026-11-10T12:14:33Z"
+                  }
+                ]
+              }
+            }
+          ],
+          "payer": {
+            "name": {
+              "given_name": "John",
+              "surname": "Doe"
+            },
+            "email_address": "sb-j0o2b53832644@personal.example.com",
+            "payer_id": "YCEFYGPRF5JBW",
+            "address": {
+              "country_code": "US"
+            }
+          },
+          "create_time": "2026-11-10T12:14:24Z",
+          "update_time": "2026-11-10T12:16:29Z",
+          "links": [
+            {
+              "href": "https://api.sandbox.paypal.com/v2/checkout/orders/81R116453E1577428",
+              "rel": "self",
+              "method": "GET"
+            }
+          ]
+        }
+      },
+      "authorization": {
+        "http_status": 200,
+        "status": "CAPTURED",
+        "data": {
+          "id": "4XB76663P4018954X",
+          "status": "CAPTURED",
+          "amount": {
+            "currency_code": "USD",
+            "value": "90.00"
+          },
+          "seller_protection": {
+            "status": "ELIGIBLE",
+            "dispute_categories": [
+              "ITEM_NOT_RECEIVED",
+              "UNAUTHORIZED_TRANSACTION"
+            ]
+          },
+          "supplementary_data": {
+            "related_ids": {
+              "order_id": "81R116453E1577428"
+            }
+          },
+          "payee": {
+            "email_address": "sb-libm953823057@business.example.com",
+            "merchant_id": "SE6RGDKLQ8K6J"
+          },
+          "expiration_time": "2026-12-09T12:14:24Z",
+          "create_time": "2026-11-10T12:14:24Z",
+          "update_time": "2026-11-10T12:16:29Z",
+          "links": [
+            {
+              "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/4XB76663P4018954X",
+              "rel": "self",
+              "method": "GET"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/4XB76663P4018954X/capture",
+              "rel": "capture",
+              "method": "POST"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/4XB76663P4018954X/void",
+              "rel": "void",
+              "method": "POST"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v2/payments/authorizations/4XB76663P4018954X/reauthorize",
+              "rel": "reauthorize",
+              "method": "POST"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v2/checkout/orders/81R116453E1577428",
+              "rel": "up",
+              "method": "GET"
+            }
+          ]
+        }
+      },
+      "captures": [
+        {
+          "capture_id": "1C279227TA561915V",
+          "http_status": 200,
+          "status": "COMPLETED",
+          "amount": {
+            "currency_code": "USD",
+            "value": "60.00"
+          },
+          "seller_receivable_breakdown": {
+            "gross_amount": {
+              "currency_code": "USD",
+              "value": "60.00"
+            },
+            "paypal_fee": {
+              "currency_code": "USD",
+              "value": "3.12"
+            },
+            "net_amount": {
+              "currency_code": "USD",
+              "value": "56.88"
+            }
+          }
+        },
+        {
+          "capture_id": "63D932488L0168405",
+          "http_status": 200,
+          "status": "COMPLETED",
+          "amount": {
+            "currency_code": "USD",
+            "value": "28.00"
+          },
+          "seller_receivable_breakdown": {
+            "gross_amount": {
+              "currency_code": "USD",
+              "value": "28.00"
+            },
+            "paypal_fee": {
+              "currency_code": "USD",
+              "value": "1.64"
+            },
+            "net_amount": {
+              "currency_code": "USD",
+              "value": "26.36"
+            }
+          }
+        }
+      ]
+    }
   }
 }

@@ -73,12 +73,13 @@ app.add_middleware(
 
 # Dependency to get Payment Gateway
 def get_gateway() -> PayPalGatewayInterface:
+    mode = os.getenv("PAYPAL_MODE", "auto").lower()
     use_mock = os.getenv("USE_MOCK_PAYPAL", "false").lower() == "true"
     client_id = os.getenv("PAYPAL_CLIENT_ID", "")
     secret = os.getenv("PAYPAL_CLIENT_SECRET", "")
     
-    # If explicitly mock or credentials not configured, use mock
-    if use_mock or not client_id or client_id == "your_sandbox_client_id_here":
+    # Explicit mock requests or unconfigured sandbox credentials
+    if mode == "mock" or use_mock or not client_id or client_id == "your_sandbox_client_id_here":
         return MockPayPalGateway()
     
     return PayPalGateway(
@@ -94,12 +95,18 @@ ai_client = AIParserClient()
 
 @app.get("/api/health")
 def healthcheck():
+    mode = os.getenv("PAYPAL_MODE", "auto").lower()
+    use_mock = os.getenv("USE_MOCK_PAYPAL", "false").lower() == "true"
+    client_id = os.getenv("PAYPAL_CLIENT_ID", "")
+    is_mock = mode == "mock" or use_mock or not client_id or client_id == "your_sandbox_client_id_here"
+
     return {
         "status": "healthy",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "gateway": "paypal_sandbox" if os.getenv("USE_MOCK_PAYPAL", "false").lower() != "true" else "mock",
-        "llm_model": os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite"),
-        "groq_model": os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"),
+        "paypal_mode": "mock" if is_mock else "sandbox",
+        "gateway": "mock" if is_mock else "paypal_sandbox",
+        "llm_model": ai_client.gemini_model,
+        "groq_model": ai_client.groq_model,
         "active_llm_provider": os.getenv("ACTIVE_LLM_PROVIDER", "gemini")
     }
 

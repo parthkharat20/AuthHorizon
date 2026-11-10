@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: authhorizon
+    runtime: python
+    plan: free
+    buildCommand: |
+      pip install -r backend/requirements.txt
+      cd frontend && npm install && npm run build && cd ..
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: PAYPAL_MODE
+        value: sandbox
+      - key: USE_MOCK_PAYPAL
+        value: "false"
+      - key: AUTO_SEED_DEMO_DATA
+        value: "true"
+      - key: FRONTEND_URL
+        fromService:
+          name: authhorizon
+          type: web
+          property: host

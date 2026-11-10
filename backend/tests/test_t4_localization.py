@@ -204,3 +204,4 @@ def test_api_parse_notice_and_re_localization():
     })
     assert reloc_da.status_code == 200
     assert "delvist afsendt" in reloc_da.json()["buyer_message"]
+

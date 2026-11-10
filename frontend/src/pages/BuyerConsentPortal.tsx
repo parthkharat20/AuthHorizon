@@ -224,15 +224,27 @@ export const BuyerConsentPortal: React.FC = () => {
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-left font-mono text-[11px] text-slate-600 space-y-1">
               <span className="text-[10px] uppercase text-slate-400 font-bold block">Cryptographic SHA-256 Consent Hash:</span>
               <p className="break-all font-bold text-slate-800">{consentResult.consent_hash}</p>
+              {consentResult.prev_hash && (
+                <p className="break-all text-[10px] text-slate-500 mt-1">Prev Hash: {consentResult.prev_hash}</p>
+              )}
               <span className="text-[10px] text-emerald-600 block mt-1">✓ Non-repudiable audit ledger updated</span>
             </div>
 
-            <button
-              onClick={() => window.location.reload()}
-              className="px-5 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-all"
-            >
-              Refresh Order Status
-            </button>
+            <div className="flex items-center justify-center gap-3">
+              <a
+                href={`/api/orders/${orderId || order?.id || 1}/evidence/download`}
+                download
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500 transition-all flex items-center gap-1.5 shadow-sm"
+              >
+                <span>Download Evidence (JSON)</span>
+              </a>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-all"
+              >
+                Refresh Order Status
+              </button>
+            </div>
           </div>
         ) : (
           /* Three Interactive Choice Cards */

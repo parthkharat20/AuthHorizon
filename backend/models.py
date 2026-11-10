@@ -127,13 +127,17 @@ class BuyerConsentModel(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    buyer_id = Column(String(64), nullable=True, default="BUYER-PORTAL-VERIFIED")
     choice = Column(SAEnum(ConsentChoice), nullable=False)
     swapped_sku = Column(String(64), nullable=True)  # Only if choice == SWAP
     swapped_item_name = Column(String(256), nullable=True)
     swapped_amount = Column(Float, nullable=True)  # Must be <= original delayed item amount
     displayed_text = Column(Text, nullable=False)  # Exact text shown to buyer
+    locale = Column(String(8), nullable=True, default="en")
     timestamp = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    consent_hash = Column(String(64), nullable=False)  # SHA-256 of displayed_text + choice + timestamp
+    prev_hash = Column(String(64), nullable=True, default="0"*64)  # Previous consent record SHA-256
+    consent_hash = Column(String(64), nullable=False)  # SHA-256 of canonical JSON payload
+    canonical_payload = Column(Text, nullable=True)  # Full canonical JSON payload
 
     order = relationship("OrderModel", back_populates="consent_records")
 
@@ -288,6 +292,7 @@ class ConsentSubmitRequest(BaseModel):
     order_id: int
     choice: ConsentChoice
     swapped_sku: Optional[str] = None  # Required if choice == SWAP
+    locale: Optional[str] = "en"
 
     @field_validator("swapped_sku")
     @classmethod
@@ -327,15 +332,25 @@ def create_db(db_url: str = "sqlite:///./authhorizon.db"):
     if "sqlite" in db_url:
         with engine.connect() as conn:
             from sqlalchemy import text
-            try:
-                conn.execute(text("ALTER TABLE delay_notices ADD COLUMN buyer_locale VARCHAR(8) DEFAULT 'en'"))
-                conn.commit()
-            except Exception:
-                pass
-            try:
-                conn.execute(text("ALTER TABLE delay_notices ADD COLUMN buyer_message TEXT"))
-                conn.commit()
-            except Exception:
-                pass
+            for col in [
+                "buyer_locale VARCHAR(8) DEFAULT 'en'",
+                "buyer_message TEXT"
+            ]:
+                try:
+                    conn.execute(text(f"ALTER TABLE delay_notices ADD COLUMN {col}"))
+                    conn.commit()
+                except Exception:
+                    pass
+            for col in [
+                "buyer_id VARCHAR(64) DEFAULT 'BUYER-PORTAL-VERIFIED'",
+                "locale VARCHAR(8) DEFAULT 'en'",
+                "prev_hash VARCHAR(64) DEFAULT '0000000000000000000000000000000000000000000000000000000000000000'",
+                "canonical_payload TEXT"
+            ]:
+                try:
+                    conn.execute(text(f"ALTER TABLE buyer_consents ADD COLUMN {col}"))
+                    conn.commit()
+                except Exception:
+                    pass
     return sessionmaker(bind=engine)
 

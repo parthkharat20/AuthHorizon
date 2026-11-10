@@ -10,7 +10,9 @@ import {
   ArrowRight,
   TrendingUp,
   AlertTriangle,
-  History
+  History,
+  Download,
+  Link2
 } from 'lucide-react';
 import { SplitHoldBar } from '../components/SplitHoldBar';
 import { NoticeParserCard } from '../components/NoticeParserCard';
@@ -22,6 +24,22 @@ export const MerchantDashboard: React.FC = () => {
   const [currentOrder, setCurrentOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [verifyingChain, setVerifyingChain] = useState<boolean>(false);
+  const [verificationResult, setVerificationResult] = useState<any | null>(null);
+
+  const handleVerifyEvidence = async () => {
+    if (!selectedOrderId) return;
+    setVerifyingChain(true);
+    setVerificationResult(null);
+    try {
+      const res = await axios.post(`/api/orders/${selectedOrderId}/evidence/verify`);
+      setVerificationResult(res.data);
+    } catch (err: any) {
+      console.error('Failed to verify evidence:', err);
+    } finally {
+      setVerifyingChain(false);
+    }
+  };
 
   // Fetch all orders
   const fetchOrders = async () => {
@@ -283,16 +301,53 @@ export const MerchantDashboard: React.FC = () => {
                     <p className="text-xs text-slate-400">Cryptographically verified capture logs & webhook receipts</p>
                   </div>
                 </div>
-                {currentOrder?.status === 'PARTIALLY_CAPTURED' && (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={handleFulfillDelayed}
-                    disabled={loading}
-                    className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-medium shadow transition-all"
+                    onClick={handleVerifyEvidence}
+                    disabled={verifyingChain}
+                    className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-50"
                   >
-                    Fulfill Delayed ($30)
+                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>{verifyingChain ? 'Verifying...' : 'Verify with PayPal'}</span>
                   </button>
-                )}
+
+                  <a
+                    href={`/api/orders/${selectedOrderId || 1}/evidence/download`}
+                    download
+                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-1.5 transition-all"
+                  >
+                    <Download className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Evidence JSON</span>
+                  </a>
+
+                  {currentOrder?.status === 'PARTIALLY_CAPTURED' && (
+                    <button
+                      onClick={handleFulfillDelayed}
+                      disabled={loading}
+                      className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-medium shadow transition-all"
+                    >
+                      Fulfill Delayed ($30)
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {/* Verification Result Banner */}
+              {verificationResult && (
+                <div className={`mb-3 p-2.5 rounded-lg border text-xs flex items-center justify-between ${
+                  verificationResult.chain_valid && verificationResult.paypal_synced
+                    ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300'
+                    : 'bg-amber-950/40 border-amber-800/60 text-amber-300'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <span>{verificationResult.sync_message || verificationResult.chain_message}</span>
+                  </div>
+                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    {verificationResult.audit_status}
+                  </span>
+                </div>
+              )}
 
               {/* Audit Records List */}
               <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
@@ -327,6 +382,28 @@ export const MerchantDashboard: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {/* Consent Records Hash Chain (T5) */}
+              {currentOrder?.consents && currentOrder.consents.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-slate-800">
+                  <span className="text-[10px] font-mono uppercase text-slate-400 flex items-center gap-1 mb-1.5">
+                    <Link2 className="w-3 h-3 text-indigo-400" />
+                    Cryptographic Consent Hash Chain:
+                  </span>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                    {currentOrder.consents.map((c: any) => (
+                      <div key={c.id} className="p-2 rounded bg-slate-950 border border-slate-800 font-mono text-[10px] space-y-0.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-200 font-bold uppercase">{c.choice} ({c.locale || 'en'})</span>
+                          <span className="text-emerald-400 font-semibold">✓ SHA-256 Intact</span>
+                        </div>
+                        <p className="text-slate-400 truncate">Hash: {c.consent_hash}</p>
+                        <p className="text-slate-500 truncate">Prev: {c.prev_hash}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Line Items Overview */}

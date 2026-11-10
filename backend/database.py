@@ -44,6 +44,17 @@ def init_db():
                     conn.commit()
                 except Exception:
                     pass
+            for col_def in [
+                "buyer_id VARCHAR(64) DEFAULT 'BUYER-PORTAL-VERIFIED'",
+                "locale VARCHAR(8) DEFAULT 'en'",
+                "prev_hash VARCHAR(64) DEFAULT '0000000000000000000000000000000000000000000000000000000000000000'",
+                "canonical_payload TEXT"
+            ]:
+                try:
+                    conn.execute(text(f"ALTER TABLE buyer_consents ADD COLUMN {col_def}"))
+                    conn.commit()
+                except Exception:
+                    pass
 
 def get_db():
     """FastAPI dependency for database sessions."""

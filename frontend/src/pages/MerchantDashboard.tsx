@@ -21,6 +21,8 @@ import {
 import { SplitHoldBar } from '../components/SplitHoldBar';
 import { NoticeParserCard } from '../components/NoticeParserCard';
 import { OrdersGrid } from '../components/OrdersGrid';
+import { GatewayLogsGrid } from '../components/GatewayLogsGrid';
+import { ConsentChainGrid } from '../components/ConsentChainGrid';
 
 export const MerchantDashboard: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -30,9 +32,20 @@ export const MerchantDashboard: React.FC = () => {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [verifyingChain, setVerifyingChain] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<any | null>(null);
-  const [activeLedgerTab, setActiveLedgerTab] = useState<'audits' | 'gateway_logs'>('audits');
+  const [activeLedgerTab, setActiveLedgerTab] = useState<'audits' | 'gateway_logs' | 'consent_chain'>('audits');
   const [testingIdempotency, setTestingIdempotency] = useState<boolean>(false);
   const [idempotencyResult, setIdempotencyResult] = useState<any | null>(null);
+  const [systemHealth, setSystemHealth] = useState<any | null>(null);
+
+  // Fetch system health
+  const fetchHealth = async () => {
+    try {
+      const res = await axios.get('/api/health');
+      setSystemHealth(res.data);
+    } catch (e) {
+      console.error('Failed to fetch health:', e);
+    }
+  };
 
   const handleVerifyEvidence = async () => {
     if (!selectedOrderId) return;
@@ -90,6 +103,7 @@ export const MerchantDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
+    fetchHealth();
     const interval = setInterval(fetchOrders, 3000);
     return () => clearInterval(interval);
   }, []);
@@ -189,9 +203,20 @@ export const MerchantDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            PayPal Sandbox Live
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono ${
+            systemHealth?.gateway === 'paypal_sandbox'
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${
+              systemHealth?.gateway === 'paypal_sandbox' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+            }`} />
+            {systemHealth?.gateway === 'paypal_sandbox' ? 'PayPal Sandbox (Live REST v2)' : 'Mock Gateway Mode'}
+          </div>
+
+          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-mono">
+            <span className="w-2 h-2 rounded-full bg-indigo-400" />
+            AI: {systemHealth?.active_llm_provider?.toUpperCase() || 'GEMINI'} FLASH (Live)
           </div>
 
           {selectedOrderId && (
@@ -201,7 +226,7 @@ export const MerchantDashboard: React.FC = () => {
               rel="noreferrer"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium shadow-md transition-all"
             >
-              <span>Open Buyer Consent Portal</span>
+              <span>Buyer Consent Portal</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
@@ -377,7 +402,7 @@ export const MerchantDashboard: React.FC = () => {
                   }`}
                 >
                   <History className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Capture Audits ({currentOrder?.audits?.length || 0})</span>
+                  <span>Captures ({currentOrder?.audits?.length || 0})</span>
                 </button>
                 <button
                   onClick={() => setActiveLedgerTab('gateway_logs')}
@@ -388,7 +413,18 @@ export const MerchantDashboard: React.FC = () => {
                   }`}
                 >
                   <Activity className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Gateway Reconciler Logs ({currentOrder?.gateway_logs?.length || 0})</span>
+                  <span>Gateway Reconciler Grid ({currentOrder?.gateway_logs?.length || 0})</span>
+                </button>
+                <button
+                  onClick={() => setActiveLedgerTab('consent_chain')}
+                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                    activeLedgerTab === 'consent_chain'
+                      ? 'bg-slate-800 text-slate-100 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Link2 className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Consent Hash Chain ({currentOrder?.consents?.length || 0})</span>
                 </button>
               </div>
 
@@ -446,118 +482,61 @@ export const MerchantDashboard: React.FC = () => {
                 </div>
               )}
 
-              {/* Tab Content: Capture Audits View */}
+              {/* Tab Content 1: Capture Audits View */}
               {activeLedgerTab === 'audits' && (
-                <>
-                  <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                    {currentOrder?.audits && currentOrder.audits.length > 0 ? (
-                      currentOrder.audits.map((a: any) => (
-                        <div
-                          key={a.id}
-                          className="p-3 rounded-lg bg-slate-950/70 border border-slate-800 flex items-center justify-between text-xs"
-                        >
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <strong className="text-slate-100">${a.amount.toFixed(2)} USD</strong>
-                              <span className="font-mono text-[10px] text-slate-400">({a.capture_type})</span>
-                            </div>
-                            <p className="font-mono text-[10px] text-blue-400 mt-0.5 truncate max-w-xs">
-                              Capture ID: {a.paypal_capture_id}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              Reconciled ✓
-                            </span>
-                            <p className="text-[10px] text-slate-500 mt-1">
-                              {a.created_at ? new Date(a.created_at).toLocaleTimeString() : ''}
-                            </p>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="py-8 text-center text-xs text-slate-500 italic">
-                        No captures executed for this order yet.
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Consent Records Hash Chain (T5) */}
-                  {currentOrder?.consents && currentOrder.consents.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-slate-800">
-                      <span className="text-[10px] font-mono uppercase text-slate-400 flex items-center gap-1 mb-1.5">
-                        <Link2 className="w-3 h-3 text-indigo-400" />
-                        Cryptographic Consent Hash Chain:
-                      </span>
-                      <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                        {currentOrder.consents.map((c: any) => (
-                          <div key={c.id} className="p-2 rounded bg-slate-950 border border-slate-800 font-mono text-[10px] space-y-0.5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-200 font-bold uppercase">{c.choice} ({c.locale || 'en'})</span>
-                              <span className="text-emerald-400 font-semibold">✓ SHA-256 Intact</span>
-                            </div>
-                            <p className="text-slate-400 truncate">Hash: {c.consent_hash}</p>
-                            <p className="text-slate-500 truncate">Prev: {c.prev_hash}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Tab Content: Gateway Reconciler Logs View */}
-              {activeLedgerTab === 'gateway_logs' && (
-                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                  {currentOrder?.gateway_logs && currentOrder.gateway_logs.length > 0 ? (
-                    currentOrder.gateway_logs.map((log: any) => (
+                <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                  {currentOrder?.audits && currentOrder.audits.length > 0 ? (
+                    currentOrder.audits.map((a: any) => (
                       <div
-                        key={log.id}
-                        className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/90 text-xs font-mono space-y-1"
+                        key={a.id}
+                        className="p-3 rounded-lg bg-slate-950/70 border border-slate-800 flex items-center justify-between text-xs"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                              {log.action}
-                            </span>
-                            <span className="text-[10px] text-slate-400">
-                              HTTP {log.status_code}
-                            </span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <strong className="text-slate-100">${a.amount.toFixed(2)} USD</strong>
+                            <span className="font-mono text-[10px] text-slate-400">({a.capture_type})</span>
                           </div>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            log.reconciler_status === 'VERIFIED'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                          }`}>
-                            {log.reconciler_status === 'VERIFIED' ? 'VERIFIED ✓' : 'MISMATCH ⚠'}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-slate-300 truncate">
-                          {log.endpoint}
-                        </div>
-                        <div className="text-[10px] text-cyan-400/90 truncate">
-                          PayPal-Request-Id: {log.request_id}
-                        </div>
-                        {log.paypal_resource_id && (
-                          <div className="text-[10px] text-slate-400 truncate">
-                            Resource ID: {log.paypal_resource_id}
-                          </div>
-                        )}
-                        {log.reconciler_message && (
-                          <p className="font-sans text-[11px] text-slate-300 pt-0.5 border-t border-slate-800/60">
-                            {log.reconciler_message}
+                          <p className="font-mono text-[10px] text-blue-400 mt-0.5 truncate max-w-xs">
+                            Capture ID: {a.paypal_capture_id}
                           </p>
-                        )}
-                        <div className="text-[9px] text-slate-500 text-right">
-                          {log.created_at ? new Date(log.created_at).toLocaleTimeString() : ''}
+                        </div>
+                        <div className="text-right">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            Reconciled ✓
+                          </span>
+                          <p className="text-[10px] text-slate-500 mt-1">
+                            {a.created_at ? new Date(a.created_at).toLocaleTimeString() : ''}
+                          </p>
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="py-8 text-center text-xs text-slate-500 italic">
-                      No gateway reconciler events recorded yet.
+                      No captures executed for this order yet.
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Tab Content 2: Gateway Reconciler Logs AG Grid */}
+              {activeLedgerTab === 'gateway_logs' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
+                    <span>AG Grid: Live PayPal REST calls, Request-Id idempotency & balance verification</span>
+                    <span className="text-cyan-400">{currentOrder?.gateway_logs?.length || 0} event(s)</span>
+                  </div>
+                  <GatewayLogsGrid logs={currentOrder?.gateway_logs || []} />
+                </div>
+              )}
+
+              {/* Tab Content 3: Cryptographic Consent Chain AG Grid */}
+              {activeLedgerTab === 'consent_chain' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
+                    <span>AG Grid: Blockchain-style SHA-256 sequential consent audit trail</span>
+                    <span className="text-emerald-400">{currentOrder?.consents?.length || 0} consent record(s)</span>
+                  </div>
+                  <ConsentChainGrid consents={currentOrder?.consents || []} />
                 </div>
               )}
             </div>

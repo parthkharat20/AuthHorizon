@@ -122,11 +122,64 @@ When a multi-item e-commerce order contains items with staggered availability or
 | **Language Runtime** | Python | `3.13` | Core business logic & financial safety gates |
 | **ORM & Database** | SQLAlchemy | `2.0+` | SQLite persistence with Write-Ahead Logging (WAL) |
 | **Payments Gateway** | PayPal REST API v2 | Sandbox / Live | Orders v2, Authorizations, Captures, Webhooks |
-| **AI Parsing** | Google Gemini / Groq | Flash / Llama 3.3 | Multilingual supplier notice extraction |
+| **AI Parsing** | Google Gemini / Groq | gemini-2.5-flash-lite / qwen-2.5-32b | Multilingual supplier notice extraction & templates |
 | **Frontend Framework** | React | `18.3` | Dual-surface UI (Merchant & Consumer) |
 | **Build System** | Vite | `6.4` | Production bundling and SPA routing |
 | **Styling** | Tailwind CSS | `4.0` | Responsive layout, dark mode, split-hold visualizer |
-| **Data Ledger** | AG Grid Community | `33.2` | Interactive transaction ledger & audit inspection |
+| **Data Ledger** | AG Grid Community | `33.2` | Interactive transaction ledger, reconciler & audit grids |
+
+---
+
+## Sponsor Technologies Used
+
+| Sponsor | Technology | How AuthHorizon Uses It |
+|:---|:---|:---|
+| **PayPal** | Orders v2, Payments Authorizations & Captures, Webhooks | Full split-shipment lifecycle (`intent: "AUTHORIZE"`, partial captures with `final_capture: false`, hold voids, idempotency replay with `PayPal-Request-Id`). |
+| **AG Grid** | AG Grid Community v33 (React) | Merchant Command Center with 3 interactive grids: Order Ledger with in-cell split ratio bars, Gateway Reconciler Log Grid, and SHA-256 Consent Hash Chain Grid. |
+| **Render** | Web Services & Cloud Infrastructure | Production cloud deployment via `render.yaml` Infrastructure-as-Code with automatic database demo seeding on boot. |
+| **Google** | Gemini 2.5 Flash Lite API | Primary LLM engine for extracting structured operational facts from unformatted multilingual supplier emails (DE, DA, EN). |
+| **Groq** | Qwen 2.5 32B | High-throughput fallback LLM provider ensuring zero downtime during API disruptions. |
+
+---
+
+## AG Grid Integration Deep Dive
+
+AuthHorizon uses **AG Grid Community v33** as the foundational data operations layer for e-commerce merchants:
+
+1. **Merchant Command Center Grid (`OrdersGrid.tsx`):**
+   - **In-Cell Split-Hold Visualizer:** Real-time dual-color stacked progress bar embedded inside each row rendering Captured % (green) vs. Active Held % (amber).
+   - **Custom Lifecycle Badges:** Status indicators (`AUTHORIZED`, `PARTIALLY_CAPTURED`, `COMPLETED`, `VOIDED`) with lock and checkmark iconography.
+   - **29-Day Hold Countdown:** Real-time countdown badge tracking PayPal's 29-day authorization hold limit per order.
+   - **Live Aggregation KPI Header:** Displays total order volume, settled captures, held reserve, and active orders.
+
+2. **Gateway Event Reconciler Grid (`GatewayLogsGrid.tsx`):**
+   - Independent verification ledger cross-checking every PayPal REST API response.
+   - Monospace `PayPal-Request-Id` display with 1-click clipboard copy for dispute and audit triage.
+   - Color-coded `VERIFIED ✓` and `MISMATCH ⚠` reconciliation badges.
+
+3. **Cryptographic Consent Chain Grid (`ConsentChainGrid.tsx`):**
+   - Displays sequential SHA-256 buyer consent records linking back to `GENESIS_HASH`.
+   - Locale badges (EN, JA, DE, DA) and exact legal notice strings bound in the cryptographic digest.
+
+---
+
+## Tested vs. Assumed Matrix
+
+| Capability | Status | Verification & Evidence |
+|:---|:---:|:---|
+| **PayPal Sandbox Order Creation** | ✅ Tested | `POST /v2/checkout/orders` with `intent: "AUTHORIZE"` verified in `evidence/paypal-sandbox-run.json`. |
+| **Partial Capture (`final_capture: false`)** | ✅ Tested | Partial settlement executed on live PayPal sandbox Capture `1C279227TA561915V`. |
+| **Final Capture (`final_capture: true`)** | ✅ Tested | Final settlement executed on live PayPal sandbox Capture `63D932488L0168405`. |
+| **Authorization Void** | ✅ Tested | Full remaining hold release verified on live PayPal sandbox authorization. |
+| **Idempotency Replay Deduplication** | ✅ Tested | Duplicate `PayPal-Request-Id` returns identical capture ID with 0 duplicate ledger movements. |
+| **422 Rejection After Final Capture** | ✅ Tested | Gateway strictly rejects re-capture after `final_capture: true`. |
+| **Multilingual AI Extraction (DE/DA/EN)** | ✅ Tested | 100% valid accuracy across 20-fixture evaluation suite (`scripts/run_eval.py`). |
+| **Adversarial Safety Gate Defense** | ✅ Tested | 10/10 prompt injections, currency terms, and ungrounded dates intercepted with 0 gateway calls. |
+| **Multi-LLM Failover Chain** | ✅ Tested | Gemini Flash $\to$ Groq Qwen $\to$ deterministic mock fallback chain verified in automated tests. |
+| **SHA-256 Consent Hash Chain** | ✅ Tested | Canonical JSON digest and tamper detection verified by unit test suite. |
+| **29-Day Hold Window Tracking** | ✅ Tested | Backend computation and frontend countdown timer verified by automated test suite. |
+| **Webhook Signature Verification** | 🟡 Mock-Tested | Signature verification implemented; public webhook receiver tested in sandbox mode. |
+| **Multi-Currency Settlement (EUR, DKK)** | ❌ Not Implemented | System strictly operates in USD for the hackathon prototype. |
 
 ---
 
@@ -184,10 +237,12 @@ pytest backend/tests/ -v
 
 ---
 
-## Regulatory & Legal Background (Not Legal Advice)
+## Regulatory & Legal Context (Not Legal Advice)
 
-* **FTC Mail, Internet, or Telephone Order Merchandise Rule (16 CFR Part 435):** Requires sellers who cannot ship within stated timeframes (or 30 days) to offer consumers a clear choice to consent to the delay or cancel with a prompt refund. AuthHorizon helps automate the required notice and capture only what physically ships; it does not claim to certify legal compliance.
-* **Dispute Mitigation:** By maintaining verifiable, SHA-256 hashed evidence of consumer consent prior to executing final settlement or release, merchants retain clear audit trails for chargeback defense and seller protection.
+> **DISCLAIMER:** AuthHorizon is technical orchestration software designed to support compliance workflows. It does NOT constitute legal advice and does NOT certify or guarantee legal compliance.
+>
+> * **FTC Mail, Internet, or Telephone Order Merchandise Rule (16 CFR Part 435):** Requires sellers who cannot ship within stated timeframes (or 30 days) to offer consumers a clear choice to consent to the delay or cancel with a prompt refund. AuthHorizon automates the delivery of standardized delay-option notices and restricts upfront captures strictly to physically shipped inventory.
+> * **Dispute Defense & Tamper-Evident Evidence:** By generating sequential SHA-256 hashed evidence bundles of consumer consent prior to executing final captures or voids, merchants preserve audit trails for PayPal chargeback resolution and seller protection.
 
 ---
 

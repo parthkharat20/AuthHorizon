@@ -19,20 +19,21 @@ CURRENCY_WORDS: Dict[str, Set[str]] = {
     "en": {
         "dollar", "dollars", "cent", "cents", "usd", "eur", "euro", "euros",
         "pound", "pounds", "gbp", "yen", "jpy", "krone", "kroner", "dkk",
-        "buck", "bucks", "cash", "refund", "charge", "payment", "price", "fee"
+        "buck", "bucks", "cash", "refund", "charge", "payment", "price", "fee",
+        "credit", "credits", "payout", "payouts"
     },
     "de": {
         "dollar", "euro", "cent", "cents", "pfennig", "pfennige", "kronen",
         "krone", "yen", "geld", "erstattung", "rückerstattung", "zahlung",
-        "preis", "gebühr", "kosten"
+        "preis", "gebühr", "kosten", "erstatten", "erstattet", "auszahlung", "vergütung"
     },
     "da": {
         "krone", "kroner", "øre", "dollar", "euro", "cent", "betaling",
-        "refusion", "gebyr", "pris", "omkostning"
+        "refusion", "gebyr", "pris", "omkostning", "refundere", "refunderet", "udbetaling"
     },
     "ja": {
         "円", "ドル", "ユーロ", "ポンド", "セント", "通貨", "金額", "返金",
-        "支払い", "価格", "費用", "yen", "dollar", "euro"
+        "支払い", "価格", "費用", "yen", "dollar", "euro", "請求"
     }
 }
 

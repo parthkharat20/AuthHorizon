@@ -2,16 +2,24 @@
 AuthHorizon Provider-Agnostic Resilient LLM Client
 Multi-LLM Provider Chain: Google Gemini -> Groq Qwen -> Deterministic Offline Fallback.
 Provides transparent provider attribution: provider_used, is_live_ai, model_name, provider_label.
+Supports Cross-Border Buyer Localization across en, ja, de, da.
 """
 
 import os
 import json
 import requests
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from pydantic import BaseModel
 from backend.ai.prompts import SYSTEM_PROMPT_EXTRACTION, USER_PROMPT_TEMPLATE
 from backend.ai.validator import sanitize_and_validate_extraction
 from backend.models import AIExtractionResult, Confidence
+from backend.ai.localization import (
+    SUPPORTED_LOCALES,
+    STANDARD_BUYER_TEMPLATES,
+    validate_buyer_message_template,
+    fill_buyer_message_template,
+    generate_buyer_delay_message
+)
 
 
 class NoticeParseResult(BaseModel):
@@ -131,6 +139,82 @@ class AIParserClient:
             provider_label="MOCK / CACHED (Offline Fixture)"
         )
 
+    def generate_localized_template(
+        self,
+        reason: str,
+        buyer_locale: str = "en"
+    ) -> Tuple[str, str, bool]:
+        """
+        Attempts to generate a polite buyer delay notification template in buyer_locale (en, ja, de, da)
+        using the Multi-LLM provider chain (Gemini -> Groq -> Standard Fallback).
+        Returns (validated_template, provider_used, is_live_ai).
+        If live models are offline or produce invalid templates, cleanly falls back to STANDARD_BUYER_TEMPLATES[locale].
+        """
+        norm_locale = buyer_locale.lower().strip() if buyer_locale else "en"
+        if norm_locale not in SUPPORTED_LOCALES:
+            norm_locale = "en"
+
+        standard_tpl = STANDARD_BUYER_TEMPLATES[norm_locale]
+
+        prompt = (
+            f"You are a customer notification assistant for AuthHorizon.\n"
+            f"Draft a polite, concise buyer delay notification template in language: '{norm_locale}'.\n"
+            f"The delay reason is: '{reason}'.\n"
+            f"MANDATORY SAFETY CONSTRAINTS:\n"
+            f"1. You MUST use exactly three placeholders: {{ITEM}}, {{DATE}}, and {{AMOUNT}}. Each must appear EXACTLY ONCE.\n"
+            f"2. You MUST NOT include ANY numbers or digits. Dates are handled ONLY by {{DATE}}.\n"
+            f"3. You MUST NOT include ANY prices, dollar amounts, currency words (dollar, euro, yen, refund, credit, fee, etc.), or currency symbols ($, €, ¥). Money is handled ONLY by {{AMOUNT}}.\n"
+            f"4. Do NOT promise refunds or credits. State that the item is delayed and the pre-authorization hold of {{AMOUNT}} remains pending on PayPal until fulfillment.\n"
+            f"5. Return a JSON object with key 'template': '<template string>'."
+        )
+
+        providers_to_try = []
+        if self.provider == "gemini":
+            providers_to_try = ["gemini", "groq"]
+        elif self.provider == "groq":
+            providers_to_try = ["groq", "gemini"]
+        else:
+            providers_to_try = ["gemini", "groq"]
+
+        for p in providers_to_try:
+            if p == "gemini" and self.gemini_key:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.gemini_model}:generateContent?key={self.gemini_key}"
+                    payload = {
+                        "contents": [{"parts": [{"text": prompt}]}],
+                        "generationConfig": {"response_mime_type": "application/json", "temperature": 0.1}
+                    }
+                    resp = requests.post(url, json=payload, timeout=15)
+                    if resp.status_code == 200:
+                        raw = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                        tpl = json.loads(raw).get("template", "")
+                        valid_tpl = validate_buyer_message_template(tpl, locale=norm_locale)
+                        return (valid_tpl, "gemini", True)
+                except Exception:
+                    pass
+
+            elif p == "groq" and self.groq_key:
+                try:
+                    url = "https://api.groq.com/openai/v1/chat/completions"
+                    headers = {"Authorization": f"Bearer {self.groq_key}", "Content-Type": "application/json"}
+                    payload = {
+                        "model": self.groq_model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "response_format": {"type": "json_object"},
+                        "temperature": 0.1
+                    }
+                    resp = requests.post(url, headers=headers, json=payload, timeout=15)
+                    if resp.status_code == 200:
+                        content = resp.json()["choices"][0]["message"]["content"]
+                        tpl = json.loads(content).get("template", "")
+                        valid_tpl = validate_buyer_message_template(tpl, locale=norm_locale)
+                        return (valid_tpl, "groq", True)
+                except Exception:
+                    pass
+
+        # Standard Fallback Template
+        return (standard_tpl, "cached", False)
+
     def _parse_with_gemini(self, raw_text: str) -> AIExtractionResult:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.gemini_model}:generateContent?key={self.gemini_key}"
         
@@ -211,21 +295,3 @@ class AIParserClient:
                 confidence_date=Confidence.LOW,
                 confidence_reason=Confidence.LOW
             )
-
-def generate_buyer_delay_message(
-    item_name: str,
-    new_ship_date: str,
-    reason: str,
-    held_amount: float
-) -> str:
-    """
-    Deterministic template filling: dollar amounts and dates are strictly
-    injected by code AFTER AI extraction.
-    """
-    return (
-        f"Your order has been partially shipped! However, '{item_name}' is currently delayed "
-        f"due to: {reason}. The revised estimated shipping date is {new_ship_date}. "
-        f"A temporary pre-authorization hold of ${held_amount:.2f} remains on your PayPal account. "
-        f"You will not be charged until this item ships. You may choose to wait, swap to an in-stock item, "
-        f"or cancel this item immediately to release the hold."
-    )

@@ -21,7 +21,7 @@ from backend.database import init_db, get_db
 from backend.models import (
     OrderModel, LineItemModel, DelayNoticeModel, BuyerConsentModel, CaptureAuditModel,
     OrderStatus, LineItemStatus, NoticeStatus, Confidence, ConsentChoice,
-    OrderCreateRequest, DelayNoticeInput, ConsentSubmitRequest,
+    OrderCreateRequest, DelayNoticeInput, ConsentSubmitRequest, LocalizeMessageRequest,
     compute_consent_hash
 )
 from backend.gateway.base import PayPalGatewayInterface
@@ -29,6 +29,11 @@ from backend.gateway.paypal_gateway import PayPalGateway
 from backend.gateway.mock_gateway import MockPayPalGateway
 from backend.reconciler import PaymentReconciler
 from backend.ai.client import AIParserClient, generate_buyer_delay_message
+from backend.ai.localization import (
+    fill_buyer_message_template,
+    STANDARD_BUYER_TEMPLATES,
+    SUPPORTED_LOCALES
+)
 from backend.ai.validator import match_item_in_order, evaluate_review_routing
 
 from contextlib import asynccontextmanager
@@ -395,6 +400,25 @@ def parse_supplier_notice(
             line_item.status = LineItemStatus.DELAYED
             line_item.is_delayed = True
 
+    # Target buyer locale for cross-border localization (T4)
+    buyer_locale = (req.buyer_locale or "en").lower().strip()
+    if buyer_locale not in SUPPORTED_LOCALES:
+        buyer_locale = "en"
+
+    # Generate localized buyer message template (AI drafted or standard fallback)
+    template_str, template_provider, template_is_live = ai_client.generate_localized_template(
+        reason=extraction.reason,
+        buyer_locale=buyer_locale
+    )
+
+    # Injected strictly by deterministic code (never by LLM)
+    buyer_msg = fill_buyer_message_template(
+        template=template_str,
+        item_name=matched_item["name"] if matched_item else extraction.item_identifier,
+        new_ship_date=extraction.new_ship_date,
+        held_amount=order.held_amount
+    )
+
     # Record Delay Notice
     notice_record = DelayNoticeModel(
         order_id=order.id,
@@ -407,18 +431,12 @@ def parse_supplier_notice(
         confidence_sku=extraction.confidence_item,
         confidence_date=extraction.confidence_date,
         confidence_reason=extraction.confidence_reason,
-        status=notice_status
+        status=notice_status,
+        buyer_locale=buyer_locale,
+        buyer_message=buyer_msg
     )
     db.add(notice_record)
     db.commit()
-
-    # Generate template buyer message (amounts injected strictly by code)
-    buyer_msg = generate_buyer_delay_message(
-        item_name=matched_item["name"] if matched_item else extraction.item_identifier,
-        new_ship_date=extraction.new_ship_date,
-        reason=extraction.reason,
-        held_amount=order.held_amount
-    )
 
     return {
         "extraction": extraction.model_dump(),
@@ -427,7 +445,9 @@ def parse_supplier_notice(
         "needs_review": needs_review,
         "review_reason": review_reason,
         "status": notice_status.value,
+        "buyer_locale": buyer_locale,
         "generated_buyer_message": buyer_msg,
+        "template_used": template_str,
         "provider_used": provider_used,
         "is_live_ai": is_live_ai,
         "model_name": model_name,
@@ -651,6 +671,58 @@ async def paypal_webhook_handler(
 
 # ── Order Queries (AG Grid Dashboard) ────────────────────────────
 
+@app.post("/api/orders/{order_id}/localize-message")
+def localize_order_message(
+    order_id: int,
+    req: LocalizeMessageRequest,
+    db: Session = Depends(get_db)
+):
+    """Dynamically re-localizes buyer delay message for a specific order into the target locale."""
+    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    locale = (req.buyer_locale or "en").lower().strip()
+    if locale not in SUPPORTED_LOCALES:
+        locale = "en"
+
+    latest_notice = order.delay_notices[-1] if order.delay_notices else None
+    delayed_item = next((it for it in order.line_items if it.is_delayed or it.status == LineItemStatus.DELAYED), None)
+
+    item_name = (
+        (latest_notice.extracted_item_name or latest_notice.extracted_sku) if latest_notice
+        else (delayed_item.name if delayed_item else "Delayed Component")
+    )
+    new_ship_date = latest_notice.new_ship_date if latest_notice else "2026-11-28"
+    reason = latest_notice.reason if latest_notice else "Supplier logistics reschedule"
+
+    template_str, provider_used, is_live_ai = ai_client.generate_localized_template(
+        reason=reason,
+        buyer_locale=locale
+    )
+
+    buyer_msg = fill_buyer_message_template(
+        template=template_str,
+        item_name=item_name,
+        new_ship_date=new_ship_date,
+        held_amount=order.held_amount
+    )
+
+    if latest_notice:
+        latest_notice.buyer_locale = locale
+        latest_notice.buyer_message = buyer_msg
+        db.commit()
+
+    return {
+        "order_id": order.id,
+        "buyer_locale": locale,
+        "buyer_message": buyer_msg,
+        "template_used": template_str,
+        "provider_used": provider_used,
+        "is_live_ai": is_live_ai
+    }
+
+
 @app.get("/api/orders/{order_id}")
 def get_order_details(order_id: int, db: Session = Depends(get_db)):
     order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
@@ -687,7 +759,9 @@ def get_order_details(order_id: int, db: Session = Depends(get_db)):
                 "new_ship_date": n.new_ship_date,
                 "reason": n.reason,
                 "status": n.status.value,
-                "confidence_sku": n.confidence_sku.value,
+                "confidence_sku": n.confidence_sku.value if n.confidence_sku else None,
+                "buyer_locale": getattr(n, "buyer_locale", "en") or "en",
+                "buyer_message": getattr(n, "buyer_message", None),
                 "created_at": n.created_at.isoformat() if n.created_at else None
             }
             for n in order.delay_notices

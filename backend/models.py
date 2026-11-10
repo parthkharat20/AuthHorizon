@@ -115,6 +115,8 @@ class DelayNoticeModel(Base):
     confidence_date = Column(SAEnum(Confidence), nullable=True)
     confidence_reason = Column(SAEnum(Confidence), nullable=True)
     status = Column(SAEnum(NoticeStatus), nullable=False, default=NoticeStatus.PENDING_REVIEW)
+    buyer_locale = Column(String(8), nullable=True, default="en")
+    buyer_message = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     order = relationship("OrderModel", back_populates="delay_notices")
@@ -187,6 +189,12 @@ class OrderResponse(BaseModel):
 class DelayNoticeInput(BaseModel):
     order_id: int
     raw_text: str = Field(min_length=10, max_length=5000)
+    buyer_locale: Optional[str] = "en"
+
+
+class LocalizeMessageRequest(BaseModel):
+    order_id: int
+    buyer_locale: str = Field(default="en", description="Target buyer locale: en, ja, de, da")
 
 
 class AIExtractionResult(BaseModel):
@@ -316,5 +324,18 @@ def compute_consent_hash(displayed_text: str, choice: str, timestamp: str) -> st
 def create_db(db_url: str = "sqlite:///./authhorizon.db"):
     engine = create_engine(db_url, echo=False)
     Base.metadata.create_all(engine)
+    if "sqlite" in db_url:
+        with engine.connect() as conn:
+            from sqlalchemy import text
+            try:
+                conn.execute(text("ALTER TABLE delay_notices ADD COLUMN buyer_locale VARCHAR(8) DEFAULT 'en'"))
+                conn.commit()
+            except Exception:
+                pass
+            try:
+                conn.execute(text("ALTER TABLE delay_notices ADD COLUMN buyer_message TEXT"))
+                conn.commit()
+            except Exception:
+                pass
     return sessionmaker(bind=engine)
 

@@ -21,15 +21,41 @@ export const BuyerConsentPortal: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [consentResult, setConsentResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [buyerLocale, setBuyerLocale] = useState<string>('ja');
+  const [localizedMessage, setLocalizedMessage] = useState<string | null>(null);
+  const [localizing, setLocalizing] = useState<boolean>(false);
 
   const fetchOrder = async () => {
     try {
       const res = await axios.get(`/api/orders/${orderId || '1'}`);
       setOrder(res.data);
+      const latestNotice = res.data?.delay_notices?.[res.data.delay_notices.length - 1];
+      if (latestNotice?.buyer_message) {
+        setLocalizedMessage(latestNotice.buyer_message);
+        if (latestNotice.buyer_locale) {
+          setBuyerLocale(latestNotice.buyer_locale);
+        }
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || err.message || 'Failed to load order');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSwitchLocale = async (newLocale: string) => {
+    setBuyerLocale(newLocale);
+    setLocalizing(true);
+    try {
+      const res = await axios.post(`/api/orders/${orderId || order?.id || 1}/localize-message`, {
+        order_id: Number(orderId || order?.id || 1),
+        buyer_locale: newLocale
+      });
+      setLocalizedMessage(res.data.buyer_message);
+    } catch (err) {
+      console.error('Failed to localize message:', err);
+    } finally {
+      setLocalizing(false);
     }
   };
 
@@ -136,16 +162,51 @@ export const BuyerConsentPortal: React.FC = () => {
           </div>
         </div>
 
-        {/* Delay Notice Banner */}
-        <div className="p-4 rounded-xl bg-blue-50 border border-blue-200/80 text-blue-900 text-xs leading-relaxed flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <strong className="font-bold text-sm block mb-1">Supplier Delay Notification</strong>
-            <p>
-              Your item <strong>"{delayedItem?.name || 'Delayed Component'}"</strong> has encountered a manufacturing delay. 
-              In compliance with consumer protection rules, your held balance of <strong>${order?.held_amount?.toFixed(2)}</strong> has <strong>NOT</strong> been charged. 
-              Please select how you would like to proceed:
-            </p>
+        {/* Delay Notice Banner with Cross-Border Localization */}
+        <div className="p-4 rounded-xl bg-blue-50 border border-blue-200/80 text-blue-900 text-xs leading-relaxed space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
+              <strong className="font-bold text-sm">Supplier Delay Notification</strong>
+            </div>
+
+            {/* Language Switcher */}
+            <div className="flex items-center gap-1 bg-white/80 p-0.5 rounded-lg border border-blue-200">
+              {[
+                { id: 'en', label: '🇺🇸 EN' },
+                { id: 'ja', label: '🇯🇵 日本語' },
+                { id: 'de', label: '🇩🇪 DE' },
+                { id: 'da', label: '🇩🇰 DA' }
+              ].map((loc) => (
+                <button
+                  key={loc.id}
+                  type="button"
+                  onClick={() => handleSwitchLocale(loc.id)}
+                  disabled={localizing}
+                  className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all ${
+                    buyerLocale === loc.id
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:bg-blue-100/50'
+                  }`}
+                >
+                  {loc.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-3 rounded-lg bg-white/70 border border-blue-100 text-slate-800 text-xs leading-relaxed font-sans">
+            {localizing ? (
+              <span className="text-slate-500 italic">Translating and re-verifying safety gate...</span>
+            ) : localizedMessage ? (
+              <span>{localizedMessage}</span>
+            ) : (
+              <p>
+                Your item <strong>"{delayedItem?.name || 'Delayed Component'}"</strong> has encountered a manufacturing delay. 
+                In compliance with consumer protection rules, your held balance of <strong>${order?.held_amount?.toFixed(2)}</strong> has <strong>NOT</strong> been charged. 
+                Please select how you would like to proceed:
+              </p>
+            )}
           </div>
         </div>
 

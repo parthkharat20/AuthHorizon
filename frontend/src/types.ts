@@ -94,7 +94,9 @@ export interface ParseNoticeResponse {
   needs_review: boolean;
   review_reason: string;
   status: string;
+  buyer_locale?: string;
   generated_buyer_message: string;
+  template_used?: string;
   provider_used?: 'gemini' | 'groq' | 'cached';
   is_live_ai?: boolean;
   model_name?: string;

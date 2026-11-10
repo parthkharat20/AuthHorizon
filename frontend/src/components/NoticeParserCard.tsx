@@ -9,6 +9,7 @@ interface NoticeParserCardProps {
 
 export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onNoticeParsed }) => {
   const [selectedFixture, setSelectedFixture] = useState<string>('german');
+  const [buyerLocale, setBuyerLocale] = useState<string>('ja');
   const [rawText, setRawText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +52,8 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
     try {
       const res = await axios.post('/api/supplier/parse-notice', {
         order_id: orderId,
-        raw_text: textToParse
+        raw_text: textToParse,
+        buyer_locale: buyerLocale
       });
       setExtractionResult(res.data);
       onNoticeParsed(res.data);
@@ -114,6 +116,35 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
           placeholder="Paste unstructured supplier email or delay notice..."
           className="w-full bg-slate-950/80 border border-slate-700 rounded-lg p-3 text-xs font-mono text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
+      </div>
+
+      {/* Target Buyer Language Selector (T4 Cross-Border Localization) */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-xs font-medium text-slate-300">Target Buyer Notification Language:</label>
+          <span className="text-[10px] text-slate-400 font-mono">Safety-gated template injection</span>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { id: 'en', label: '🇺🇸 English' },
+            { id: 'ja', label: '🇯🇵 日本語' },
+            { id: 'de', label: '🇩🇪 Deutsch' },
+            { id: 'da', label: '🇩🇰 Dansk' }
+          ].map((loc) => (
+            <button
+              key={loc.id}
+              type="button"
+              onClick={() => setBuyerLocale(loc.id)}
+              className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all border ${
+                buyerLocale === loc.id
+                  ? 'bg-blue-600/30 border-blue-500 text-blue-200 shadow-sm'
+                  : 'bg-slate-800/50 border-slate-700/60 text-slate-400 hover:bg-slate-800'
+              }`}
+            >
+              {loc.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Action Button */}
@@ -212,9 +243,16 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
           </div>
 
           {extractionResult.generated_buyer_message && (
-            <div className="pt-2 border-t border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase block mb-1">Generated Buyer Consent Notice (Code Injected):</span>
-              <p className="p-2.5 rounded bg-slate-900 border border-slate-800 text-[11px] text-slate-300 leading-relaxed">
+            <div className="pt-2.5 border-t border-slate-800 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold">
+                  Buyer Consent Notice (Injected by Code):
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                  Locale: {extractionResult.buyer_locale?.toUpperCase() || buyerLocale.toUpperCase()}
+                </span>
+              </div>
+              <p className="p-3 rounded-lg bg-slate-900/90 border border-slate-800 text-xs text-slate-200 leading-relaxed font-sans">
                 {extractionResult.generated_buyer_message}
               </p>
             </div>

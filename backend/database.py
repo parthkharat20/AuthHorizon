@@ -30,8 +30,20 @@ if DATABASE_URL.startswith("sqlite"):
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
-    """Create all tables in SQLite."""
+    """Create all tables in SQLite and ensure all schema columns exist."""
     Base.metadata.create_all(bind=engine)
+    if DATABASE_URL.startswith("sqlite"):
+        with engine.connect() as conn:
+            from sqlalchemy import text
+            for col_def in [
+                "buyer_locale VARCHAR(8) DEFAULT 'en'",
+                "buyer_message TEXT"
+            ]:
+                try:
+                    conn.execute(text(f"ALTER TABLE delay_notices ADD COLUMN {col_def}"))
+                    conn.commit()
+                except Exception:
+                    pass
 
 def get_db():
     """FastAPI dependency for database sessions."""

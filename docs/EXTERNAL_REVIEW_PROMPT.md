@@ -1,13 +1,13 @@
-# PROMPT: Architecture & System Review for "AuthHorizon" (PayPal AI Hackathon 2026)
+# PROMPT: Architecture & System Review for "AuthHorizon"
 
 ## 1. Role & Review Objective
-You are a Principal Payments Architect, Distributed Systems Engineer, and Hackathon Judge. 
-Review the technical implementation, architecture, financial safety boundaries, and PayPal REST v2 mechanics of **AuthHorizon**, an entry for the **PayPal AI Hackathon 2026** (Devpost).
+You are a Principal Payments Architect and Distributed Systems Engineer. 
+Review the technical implementation, architecture, financial safety boundaries, and PayPal REST v2 mechanics of **AuthHorizon**.
 
 Your objective:
 1. Conduct a rigorous architectural critique of the end-to-end flow.
 2. Identify latent failure modes, edge cases, or race conditions in the PayPal authorization/capture lifecycle.
-3. Suggest high-impact optimizations, refinements, or demo enhancements that will maximize the score across the hackathon’s 5 judging criteria: **Technological Implementation, Design, Potential Impact, Innovation, and Presentation**.
+3. Suggest high-impact optimizations, refinements, or production-hardening enhancements across 5 core dimensions: **Technological Implementation, System Design, Potential Impact, Innovation, and Usability**.
 
 ---
 
@@ -138,12 +138,12 @@ The chain head is queryable via `/api/orders/{id}/evidence`, allowing third-part
 Remember constraints: **<3 hours per suggestion, solo dev + Gemini coding agent, no new products, no crowded lanes**.
 
 1. **Weak Spot Attack — 29-Day Wait Path & Reauth:**
-   - How should we address the 29-day authorization expiration window if the buyer consents to Wait? What is the simplest, most robust implementation to simulate or handle this cleanly in a hackathon demo?
+   - How should we address the 29-day authorization expiration window if the buyer consents to Wait? What is the simplest, most robust implementation to simulate or handle this cleanly in a live walkthrough?
 2. **Weak Spot Attack — Consent-Link Authentication:**
    - Currently `/consent/:orderId` relies on the order ID. What is the most lightweight, 30-minute security enhancement (e.g. signed HMAC token in URL `?sig=...`) to prevent guessing order IDs?
 3. **Weak Spot Attack — Webhook Sequencing:**
-   - Since Render deployment (T8) will introduce live webhooks, what is the cleanest pattern to ensure out-of-order webhook delivery doesn't overwrite a verified synchronous Reconciler state?
-4. **Hackathon Winning Edge & Demo Optimization:**
-   - How can the UI/UX (Split-Hold Visualizer, AG Grid ledger, Buyer Portal) be tuned to make the 3-minute demo video instantly understandable and memorable to non-technical judges?
-   - What high-leverage addition would best boost scores for **Innovation** and **Potential Impact** without blowing the budget?
+   - Since cloud deployment will introduce live webhooks, what is the cleanest pattern to ensure out-of-order webhook delivery doesn't overwrite a verified synchronous Reconciler state?
+4. **Usability & Presentation Clarity:**
+   - How can the UI/UX (Split-Hold Visualizer, AG Grid ledger, Buyer Portal) be tuned to make the walkthrough instantly understandable and memorable to executive stakeholders?
+   - What high-leverage addition would best boost the system's **Innovation** and **Practical Impact** within the time constraints?
 

@@ -1,141 +1,196 @@
 # AuthHorizon
 
-> **Split-Shipment Intelligence** — AI-powered supplier delay parsing meets PayPal's native authorization-and-capture lifecycle for legally compliant, buyer-consented partial fulfillment.
+> **Split-Shipment Intelligence & Consumer Consent Engine** — Production-grade payment orchestration connecting multilingual supplier delay notices with PayPal REST API v2 authorization-and-capture lifecycles and cryptographic consumer consent logs.
 
-[![PayPal AI Hackathon 2026](https://img.shields.io/badge/PayPal-AI%20Hackathon%202026-003087?style=for-the-badge&logo=paypal&logoColor=white)](https://paypalaihackathon.devpost.com/)
-[![AG Grid](https://img.shields.io/badge/AG%20Grid-Studio-0070e0?style=for-the-badge)](https://ag-grid.com/)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![PayPal](https://img.shields.io/badge/PayPal-REST%20v2-003087?style=flat&logo=paypal&logoColor=white)](https://developer.paypal.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
+[![AG Grid](https://img.shields.io/badge/AG%20Grid-33.2-0070e0?style=flat)](https://www.ag-grid.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
-## The Problem
+## Overview
 
-When a multi-item e-commerce order has some items in stock and others delayed by suppliers:
+When a multi-item e-commerce order contains items with staggered availability or unexpected supplier backorders, merchants face a difficult trade-off:
 
-1. **Charge everything upfront?** → Violates FTC 16 CFR Part 435 (can't charge before shipping) and EU shipping directives
-2. **Cancel the whole order?** → Loses revenue and frustrates buyers
-3. **Wait for everything?** → Delays shipped items, destroys customer experience
+1. **Charge upfront for unshipped items:** Exposes the business to chargebacks, customer disputes, and regulatory scrutiny under consumer protection standards (e.g., FTC 16 CFR Part 435 delay-option requirements).
+2. **Cancel the entire order:** Sacrifices immediate revenue and damages customer loyalty.
+3. **Hold all items until complete:** Delays delivery of in-stock items, degrading the consumer experience.
 
-**23% of multi-item orders contain at least one backordered item.** There is no system that connects unstructured supplier delay notices to legally compliant buyer choices and deterministic payment execution.
+**AuthHorizon** provides the automated operational bridge:
+* Authorizes the full order total upfront (`intent: "AUTHORIZE"`).
+* Partials out and captures payment only for items that physically ship (`final_capture: false`).
+* Automatically ingests unstructured, multilingual supplier delay notifications (German, Danish, English) using LLM extraction bounded by a deterministic financial safety gate.
+* Generates an interactive self-service Consumer Consent Portal where the buyer chooses to **Wait**, **Swap** for an in-stock alternative, or **Cancel** with immediate release of held funds.
+* Maintains a tamper-evident, SHA-256 chained cryptographic audit trail for compliance and dispute prevention.
 
-## The Solution
+---
 
-AuthHorizon builds the missing operational and legal compliance bridge:
-
-```
-Messy Supplier Email → AI Parser (Claude) → Deterministic Validator → Buyer Consent Portal → PayPal Split-Capture Execution → Auditable Ledger
-```
-
-### How It Works
-
-1. **Authorize, Don't Capture** — Order created with PayPal `intent: "AUTHORIZE"` ($90 held, $0 charged)
-2. **Ship What's Ready** — Partial capture ($60) for in-stock items, `final_capture: false` keeps auth open
-3. **AI Reads the Mess** — Claude parses messy/multilingual supplier delay notices (German, Danish, English), extracting SKU, ship date, reason with confidence scores
-4. **Buyer Chooses** — Clean consent portal: Wait (keep hold), Swap (alternative item), or Cancel (release hold)
-5. **Deterministic Execution** — Code moves every cent. AI never touches money. SHA-256 consent hashing for audit trail.
-
-### The Non-Negotiable Safety Gate
-
-> **AI NEVER moves, calculates, or authorizes money.** AI parses unstructured text and drafts buyer-facing messages. Deterministic Python code computes amounts, calls PayPal APIs, and executes transactions with idempotency headers.
-
-## Architecture
+## Architectural Principles
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  Supplier Email (DE/DA/EN)                                  │
-│       ↓                                                     │
-│  AI Parser (Claude 3.5 Sonnet) — extracts SKU, date, reason│
-│       ↓                                                     │
-│  Deterministic Validator — confidence check, item matching  │
-│       ↓                                                     │
-│  Buyer Consent Portal — Wait / Swap / Cancel                │
-│       ↓                                                     │
-│  PayPal REST v2 — authorize → partial capture → resolve     │
-│       ↓                                                     │
-│  AG Grid Merchant Dashboard — Split Hold Bar + Audit Ledger │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       AuthHorizon System Architecture                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   [Supplier Email (DE/DA/EN)]                                               │
+│              │                                                              │
+│              ▼                                                              │
+│   [AI Intelligence Layer]  ──> Gemini Flash / Groq (Structured Extract Only)│
+│              │                                                              │
+│              ▼                                                              │
+│   [Deterministic Safety Gate]  ──> Rejects currency/prices; Grounding check  │
+│              │                                                              │
+│              ▼                                                              │
+│   [Consumer Consent Portal]   ──> Buyer chooses: WAIT | SWAP | CANCEL       │
+│              │                                                              │
+│              ▼                                                              │
+│   [PayPal REST v2 Gateway]    ──> Authorize ──> Split Capture ──> Void/Final│
+│              │                                                              │
+│              ▼                                                              │
+│   [Post-Action Reconciler]    ──> Live GET balance checks; Ghost-guard      │
+│              │                                                              │
+│              ▼                                                              │
+│   [Cryptographic Audit Log]   ──> SHA-256 chained tamper-evident ledger     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Tech Stack
+### The Financial Safety Gate
+* **AI Never Moves Money:** The LLM is strictly an untrusted text parser and localized message drafter. It never calculates amounts, never outputs prices, and never authorizes transactions.
+* **Deterministic Guardrails:**
+  - Code strictly validates that only `new_ship_date` may contain digits.
+  - Reason fields reject digits, URLs, and currency words across supported locales.
+  - Model confidence scores are treated as advisory; auto-approval requires verifiable grounding against source text.
+  - All ledger amounts, capture values, and PayPal payload amounts are computed solely by deterministic Python code using database line-item amounts.
 
-| Layer | Technology |
-|-------|-----------|
-| **Backend** | Python 3.12, FastAPI, SQLAlchemy, Pydantic v2 |
-| **AI** | Claude 3.5 Sonnet (Anthropic) — notice parsing only |
-| **Payments** | PayPal REST v2 (`intent: AUTHORIZE`, partial captures) |
-| **Frontend** | React 18, Vite, Tailwind CSS, AG Grid Community |
-| **Database** | SQLite (audit ledger) |
+---
 
-## Key Features
+## State Machine
 
-- **Split Hold Bar** — Hero visual: $90 bar dynamically splits into $60 Green (Captured) / $30 Amber (Held) with smooth CSS animations
-- **Multilingual AI Parsing** — Handles German, Danish, and English supplier emails with per-field confidence scoring
-- **Cryptographic Consent** — SHA-256 hash binding displayed text + choice + timestamp for immutable audit trail
-- **Idempotent Transactions** — Every PayPal capture includes `PayPal-Request-Id` header
-- **Webhook Verification** — Captures verified via `POST /v1/notifications/verify-webhook-signature`
-- **AG Grid Dashboard** — Full merchant command center with order grid, audit log, and Hold Bar visualization
+```
+[Buyer Places $90 Order (3 items @ $30)]
+               │
+               ▼
+[POST /v2/checkout/orders: intent=AUTHORIZE]  ──> Status: CREATED
+               │
+               ▼
+[Buyer Approves via PayPal Sandbox/Checkout]
+               │
+               ▼
+[POST /v2/checkout/orders/{id}/authorize]     ──> Status: AUTHORIZED ($90 Held, $0 Captured)
+               │
+               ▼
+[Fulfill In-Stock Items (Items A & B = $60)]
+[POST /v2/payments/authorizations/{auth_id}/capture]
+ (amount: $60.00, final_capture: false)       ──> Status: PARTIALLY_CAPTURED ($60 Captured, $30 Held)
+               │
+               ▼
+[Supplier Sends Delay Notice for Item C]
+               │
+               ▼
+[AI Notice Parser + Safety Gate]              ──> Item C marked DELAYED; Consent Notice Generated
+               │
+               ▼
+[Buyer Opens Consent Portal (/consent/{id})]
+               │
+  ┌────────────┼─────────────┐
+  ▼            ▼             ▼
+[WAIT]       [SWAP]       [CANCEL]
+  │            │             │
+  │            │             └─► [POST /v2/payments/authorizations/{parent_auth_id}/void]
+  │            │                 Status: VOIDED ($60 Captured, $0 Held; $30 Hold Released Immediately)
+  │            │
+  │            └─► [Capture Replacement Price <= $30 with final_capture: true]
+  │                Status: COMPLETED ($60 + $Swap Captured, $0 Held)
+  │
+  └─► [Hold Maintained until Item C arrives]
+      └─► [POST /v2/payments/authorizations/{auth_id}/capture]
+          (amount: $30.00, final_capture: true)
+          Status: COMPLETED ($90 Captured, $0 Held)
+```
+
+---
+
+## Technology Stack
+
+| Component | Technology | Version | Description |
+|:---|:---|:---|:---|
+| **Backend Framework** | FastAPI | `0.115+` | High-performance asynchronous REST API |
+| **Language Runtime** | Python | `3.13` | Core business logic & financial safety gates |
+| **ORM & Database** | SQLAlchemy | `2.0+` | SQLite persistence with Write-Ahead Logging (WAL) |
+| **Payments Gateway** | PayPal REST API v2 | Sandbox / Live | Orders v2, Authorizations, Captures, Webhooks |
+| **AI Parsing** | Google Gemini / Groq | Flash / Llama 3.3 | Multilingual supplier notice extraction |
+| **Frontend Framework** | React | `18.3` | Dual-surface UI (Merchant & Consumer) |
+| **Build System** | Vite | `6.4` | Production bundling and SPA routing |
+| **Styling** | Tailwind CSS | `4.0` | Responsive layout, dark mode, split-hold visualizer |
+| **Data Ledger** | AG Grid Community | `33.2` | Interactive transaction ledger & audit inspection |
+
+---
 
 ## Quick Start
 
-### Prerequisites
-- Python 3.12+
-- Node.js 18+
-- PayPal Sandbox account ([developer.paypal.com](https://developer.paypal.com))
-- Anthropic API key ([console.anthropic.com](https://console.anthropic.com))
+### 1. Prerequisites
+- Python `3.12+`
+- Node.js `18+`
+- A [PayPal Developer](https://developer.paypal.com/) account with sandbox credentials
+- Google Gemini API Key (or Groq API key)
 
-### Setup
+### 2. Installation
 
 ```bash
-# Clone
-git clone https://github.com/YOUR_USERNAME/authhorizon.git
-cd authhorizon
+# Clone repository
+git clone https://github.com/parthkharat20/AuthHorizon.git
+cd AuthHorizon
 
-# Backend
+# Configure environment
 cp .env.example .env
-# Edit .env with your PayPal Sandbox + Anthropic credentials
-python -m venv venv
+# Edit .env and supply your PayPal Client ID, Secret, and Gemini API key
+
+# Set up Python virtual environment
+python3 -m venv venv
 source venv/bin/activate
 pip install -r backend/requirements.txt
-uvicorn backend.main:app --reload --port 8000
 
-# Frontend (new terminal)
+# Build frontend production assets
 cd frontend
 npm install
-npm run dev
+npm run build
+cd ..
 ```
 
-Open `http://localhost:5173` for the Merchant Dashboard.
+### 3. Run Application
 
-### Demo Flow
+```bash
+# Start unified application server (FastAPI serves both API and React SPA)
+uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+```
 
-1. Click **"Create Demo Order"** ($90 total: 3 items × $30)
-2. Open the PayPal approval link → log in as sandbox buyer → approve
-3. Click **"Authorize"** → Hold Bar shows $90 solid
-4. Click **"Ship In-Stock Items"** → Hold Bar splits: $60 Green / $30 Amber
-5. Select a supplier notice fixture (German/Danish/English) → **"Parse Notice"**
-6. Navigate to Buyer Consent Portal → choose Wait, Swap, or Cancel
-7. Check the Audit Ledger — every transaction verified
-
-## PayPal APIs Used
-
-| Endpoint | Purpose |
-|----------|---------|
-| `POST /v2/checkout/orders` | Create order with `intent: "AUTHORIZE"` |
-| `POST /v2/checkout/orders/{id}/authorize` | Lock authorization |
-| `POST /v2/payments/authorizations/{id}/capture` | Partial capture (`final_capture: false` then `true`) |
-| `POST /v2/payments/authorizations/{id}/void` | Release remaining hold (Cancel path) |
-| `POST /v1/notifications/verify-webhook-signature` | Verify webhook authenticity |
-
-## Regulatory Compliance
-
-- **FTC 16 CFR Part 435** — Cannot charge for unshipped goods. AuthHorizon captures only when items ship.
-- **EU Consumer Rights Directive** — Requires merchant notification and buyer consent for delays.
-- **PayPal Seller Protection** — Documented authorization-and-capture flow with audit trail reduces dispute liability.
-
-## License
-
-MIT
+Access the application in your browser:
+* **Merchant Command Center:** [http://localhost:8000](http://localhost:8000)
+* **API Documentation (Swagger UI):** [http://localhost:8000/docs](http://localhost:8000/docs)
+* **System Healthcheck:** [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
 ---
 
-Built for the [PayPal AI Hackathon 2026](https://paypalaihackathon.devpost.com/) 🚀
+## Test Suite
 
+```bash
+# Run unit and integration tests
+pytest backend/tests/ -v
+```
+
+---
+
+## Regulatory & Legal Background (Not Legal Advice)
+
+* **FTC Mail, Internet, or Telephone Order Merchandise Rule (16 CFR Part 435):** Requires sellers who cannot ship within stated timeframes (or 30 days) to offer consumers a clear choice to consent to the delay or cancel with a prompt refund. AuthHorizon helps automate the required notice and capture only what physically ships; it does not claim to certify legal compliance.
+* **Dispute Mitigation:** By maintaining verifiable, SHA-256 hashed evidence of consumer consent prior to executing final settlement or release, merchants retain clear audit trails for chargeback defense and seller protection.
+
+---
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

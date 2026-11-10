@@ -1,5 +1,5 @@
 # AuthHorizon — Technical Implementation Report
-## PayPal AI Hackathon 2026
+## Technical Architecture & Implementation Dossier
 **Generated on:** November 10, 2026  
 **Document Purpose:** Complete technical review summary for external architecture & code review agents.
 
@@ -8,7 +8,7 @@
 ## 1. Executive Summary & Problem Scope
 
 * **Project Name:** AuthHorizon (Split-Shipment Intelligence & Buyer Consent Engine)
-* **Track Targets:** 1st Place Grand Prize ($12,000) OR Best Use of PayPal + AI ($5,000) + 1st Place AG Grid / AG Studio Sponsor Prize ($5,000).
+* **Target Capability:** Production-grade e-commerce split-shipment automation & tamper-evident audit ledger.
 * **Problem Solved & Regulatory Background:** Background (not legal advice): the FTC Mail, Internet or Telephone Order Rule (16 CFR 435) requires a seller who cannot ship on time to send a delay-option notice: consent to the delay, or cancel with a prompt refund. It does NOT ban pre-shipment charges. EU Consumer Rights Directive Art. 18 details are unverified; background only. AuthHorizon helps send the notice and capture only what ships; it does not guarantee compliance. Dispute tools elsewhere fight disputes after they happen; AuthHorizon prevents them.
 * **The Solution:** AuthHorizon connects unformatted B2B supplier delay notices, consumer consent choices (Wait, Swap, Cancel), and PayPal's native authorization-and-capture split-shipment lifecycle (`intent: "AUTHORIZE"` $\to$ partial capture for in-stock items $\to$ held balance resolution) with an auditable cryptographic ledger.
 * **The Non-Negotiable Financial Safety Gate:** AI NEVER calculates, touches, or moves money. AI parses unstructured notices into structured metadata and drafts message templates. Deterministic Python code computes every cent, injects dollar amounts, and calls PayPal REST APIs with idempotency headers.
@@ -194,5 +194,5 @@ open http://localhost:8000
 
 1. **State Machine Edge Cases:** Are there any unhandled authorization decay or reauthorization states in PayPal's 29-day honor window that need tighter handling?
 2. **Failure Hierarchy:** For the Cancel path on a partially captured authorization, is direct `POST /void` on the parent authorization resilient across all PayPal sandbox buyer types, or should the $0.01 final capture fallback be made primary?
-3. **Demo Video Pacing:** Does the Split Hold Bar transition and cryptographic consent display provide enough visceral clarity for a 3-minute hackathon judge evaluation?
+3. **UI/UX Clarity:** Does the Split Hold Bar transition and cryptographic consent display provide enough visceral clarity for an executive or evaluator walkthrough?
 

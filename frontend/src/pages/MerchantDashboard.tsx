@@ -142,7 +142,7 @@ export const MerchantDashboard: React.FC = () => {
                 Split-Shipment Intelligence
               </span>
             </h1>
-            <p className="text-[11px] text-slate-400">PayPal AI Hackathon 2026 • Live Sandbox Control Center</p>
+            <p className="text-[11px] text-slate-400">Enterprise Split-Shipment & Consent Control Center</p>
           </div>
         </div>
 

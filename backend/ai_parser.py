@@ -61,7 +61,7 @@ Parse the following supplier delay notice and extract the structured fields.
 """
 
 
-# ── Test Fixtures (hardcoded for hackathon demo) ─────────────────────────────
+# ── Test Fixtures (Multilingual Supplier Samples) ───────────────────────────
 
 FIXTURE_GERMAN = (
     "Betreff: Verzögerung Ihrer Bestellung #DE-4471\n\n"

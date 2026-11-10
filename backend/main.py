@@ -86,7 +86,9 @@ def healthcheck():
         "status": "healthy",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "gateway": "paypal_sandbox" if os.getenv("USE_MOCK_PAYPAL", "false").lower() != "true" else "mock",
-        "llm_model": os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+        "llm_model": os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite"),
+        "groq_model": os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"),
+        "active_llm_provider": os.getenv("ACTIVE_LLM_PROVIDER", "gemini")
     }
 
 
@@ -358,9 +360,22 @@ def parse_supplier_notice(
 
     # Run AI Extraction
     try:
-        extraction = ai_client.parse_notice(req.raw_text)
+        parse_result = ai_client.parse_notice(req.raw_text)
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"AI Safety / Parsing error: {str(e)}")
+
+    if hasattr(parse_result, "extraction"):
+        extraction = parse_result.extraction
+        provider_used = parse_result.provider_used
+        is_live_ai = parse_result.is_live_ai
+        model_name = parse_result.model_name
+        provider_label = parse_result.provider_label
+    else:
+        extraction = parse_result
+        provider_used = "cached"
+        is_live_ai = False
+        model_name = "mock"
+        provider_label = "MOCK / CACHED"
 
     # Match extracted item in order
     order_items_dict = [
@@ -412,7 +427,11 @@ def parse_supplier_notice(
         "needs_review": needs_review,
         "review_reason": review_reason,
         "status": notice_status.value,
-        "generated_buyer_message": buyer_msg
+        "generated_buyer_message": buyer_msg,
+        "provider_used": provider_used,
+        "is_live_ai": is_live_ai,
+        "model_name": model_name,
+        "provider_label": provider_label
     }
 
 

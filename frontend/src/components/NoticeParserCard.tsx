@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Sparkles, AlertCircle, CheckCircle2, ShieldAlert, RefreshCw } from 'lucide-react';
+import { Sparkles, AlertCircle, CheckCircle2, ShieldAlert, RefreshCw, Cpu, Layers } from 'lucide-react';
 
 interface NoticeParserCardProps {
   orderId: number;
@@ -74,9 +74,15 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
             <p className="text-xs text-slate-400">Multilingual delay parser with deterministic safety gate</p>
           </div>
         </div>
-        <span className="text-xs font-mono px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
-          Target Order #{orderId}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/80 flex items-center gap-1">
+            <Layers className="w-3 h-3 text-indigo-400" />
+            Chain: Gemini → Groq → Fallback
+          </span>
+          <span className="text-xs font-mono px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
+            Target Order #{orderId}
+          </span>
+        </div>
       </div>
 
       {/* Preset Selector */}
@@ -142,21 +148,49 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
 
       {/* Extraction Result Preview */}
       {extractionResult && (
-        <div className="mt-4 p-4 rounded-lg bg-slate-950/90 border border-slate-700/80 text-xs space-y-2.5 animate-fadeIn">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-            <span className="font-bold text-slate-200 flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Extraction Verified
-            </span>
-            <span
-              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                extractionResult.needs_review
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-              }`}
-            >
-              {extractionResult.status}
-            </span>
+        <div className="mt-4 p-4 rounded-lg bg-slate-950/90 border border-slate-700/80 text-xs space-y-3 animate-fadeIn">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-800">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-200 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                Extraction Verified
+              </span>
+              <span
+                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                  extractionResult.needs_review
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                }`}
+              >
+                {extractionResult.status}
+              </span>
+            </div>
+
+            {/* Multi-LLM Provider Attribution Badge */}
+            <div className="flex items-center gap-1.5">
+              {extractionResult.provider_used === 'gemini' && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                  LIVE AI (Gemini Flash)
+                </span>
+              )}
+              {extractionResult.provider_used === 'groq' && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                  LIVE AI (Groq Qwen)
+                </span>
+              )}
+              {(extractionResult.provider_used === 'cached' || !extractionResult.is_live_ai) && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+                  MOCK / CACHED (Offline Fixture)
+                </span>
+              )}
+              {extractionResult.model_name && (
+                <span className="text-[10px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                  {extractionResult.model_name}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-slate-300">

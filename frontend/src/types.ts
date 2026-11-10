@@ -80,12 +80,25 @@ export interface ExtractionField {
 }
 
 export interface ParseNoticeResponse {
-  item_identified: ExtractionField;
-  new_ship_date: ExtractionField;
-  reason: ExtractionField;
-  language_detected: ExtractionField;
+  extraction: {
+    item_identifier: string;
+    new_ship_date: string;
+    reason: string;
+    language: string;
+    confidence_item: "HIGH" | "MED" | "LOW";
+    confidence_date: "HIGH" | "MED" | "LOW";
+    confidence_reason: "HIGH" | "MED" | "LOW";
+  };
+  matched_sku: string | null;
+  matched_name: string | null;
   needs_review: boolean;
-  raw_text: string;
+  review_reason: string;
+  status: string;
+  generated_buyer_message: string;
+  provider_used?: 'gemini' | 'groq' | 'cached';
+  is_live_ai?: boolean;
+  model_name?: string;
+  provider_label?: string;
 }
 
 export interface ConsentSubmission {

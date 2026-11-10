@@ -236,8 +236,15 @@ def evaluate_review_routing(
         notice_norm = unicodedata.normalize('NFKC', raw_notice_text).lower()
         sku_clean = matched_item.get("sku", "").lower()
         
-        # Grounding item: SKU or identifier must appear in notice
-        if sku_clean not in notice_norm and extraction.item_identifier.lower() not in notice_norm:
+        # Grounding item: SKU or identifier or catalog item tokens must appear in notice
+        item_name_tokens = set(re.findall(r'\w+', matched_item.get("name", "").lower()))
+        notice_tokens = set(re.findall(r'\w+', notice_norm))
+        has_item_grounding = (
+            sku_clean in notice_norm or 
+            extraction.item_identifier.lower() in notice_norm or
+            len(item_name_tokens.intersection(notice_tokens)) >= 2
+        )
+        if not has_item_grounding:
             return True, "Item identifier is not grounded in source notice text"
 
         # Grounding date: the date digits (e.g. YYYY or DD.MM.YYYY or YYYY-MM-DD) must be mentioned

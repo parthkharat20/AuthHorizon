@@ -4,6 +4,7 @@ End-to-end payment lifecycle, deterministic validation gates, AI parser, and SQL
 """
 
 import os
+import json
 import uuid
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
@@ -1125,6 +1126,27 @@ def list_orders(db: Session = Depends(get_db)):
         }
         for o in orders
     ]
+
+
+# ── AI Safety & Eval Benchmark (T7) ──────────────────────────────
+
+@app.get("/api/eval/summary")
+def get_eval_summary():
+    """Returns the latest AI Safety & Eval benchmark results."""
+    eval_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "eval", "results.json")
+    if not os.path.exists(eval_file):
+        from scripts.run_eval import run_evaluation
+        return run_evaluation()
+
+    with open(eval_file, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@app.post("/api/eval/run")
+def trigger_eval_run():
+    """Triggers an on-demand re-execution of the 20-notice AI Safety & Eval suite."""
+    from scripts.run_eval import run_evaluation
+    return run_evaluation()
 
 
 # ── Static SPA Serving (Render & Unified Local Server) ───────────

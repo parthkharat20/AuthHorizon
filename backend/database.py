@@ -333,6 +333,79 @@ def seed_demo_data(db: Session):
         created_at=now - timedelta(hours=6)
     ))
 
+    # ── Seed Supplier Nodes & SKU Mappings for Risk Engine (M5) ────
+    from backend.risk.models import SupplierNodeModel, SupplierSKUMapping
+    from backend.risk.engine import assess_order_risk
+
+    if db.query(SupplierNodeModel).count() == 0:
+        # Supplier A: Reliable US warehouse (low risk)
+        sup_a = SupplierNodeModel(
+            supplier_code="SUP-US-PRIME",
+            name="PrimeParts USA (Ohio Warehouse)",
+            region="US",
+            total_orders_fulfilled=500,
+            on_time_deliveries=480,
+            late_deliveries=20,
+            avg_delay_days=2.0,
+            port_congestion_factor=0.05,
+            weather_risk_factor=0.03,
+            geopolitical_risk_factor=0.01
+        )
+        db.add(sup_a)
+
+        # Supplier B: EU supplier with moderate risk
+        sup_b = SupplierNodeModel(
+            supplier_code="SUP-EU-LOGISTICS",
+            name="EuroLogistik GmbH (Hamburg)",
+            region="DE",
+            total_orders_fulfilled=300,
+            on_time_deliveries=240,
+            late_deliveries=60,
+            avg_delay_days=5.5,
+            port_congestion_factor=0.35,
+            weather_risk_factor=0.15,
+            geopolitical_risk_factor=0.10
+        )
+        db.add(sup_b)
+
+        # Supplier C: Asia supplier with high risk (Ceramic Coating supplier)
+        sup_c = SupplierNodeModel(
+            supplier_code="SUP-ASIA-SHENZHEN",
+            name="Shenzhen Components Ltd",
+            region="CN",
+            total_orders_fulfilled=200,
+            on_time_deliveries=110,
+            late_deliveries=90,
+            avg_delay_days=12.0,
+            port_congestion_factor=0.75,
+            weather_risk_factor=0.30,
+            geopolitical_risk_factor=0.65
+        )
+        db.add(sup_c)
+
+        db.flush()
+
+        # Map SKUs to suppliers
+        # SKU-BEAR-01: Primary = US, Backup = EU
+        db.add(SupplierSKUMapping(supplier_id=sup_a.id, sku="SKU-BEAR-01", is_primary=True, unit_cost=12.00, lead_time_days=3))
+        db.add(SupplierSKUMapping(supplier_id=sup_b.id, sku="SKU-BEAR-01", is_primary=False, unit_cost=14.00, lead_time_days=7))
+
+        # SKU-PUMP-02: Primary = EU, Backup = US
+        db.add(SupplierSKUMapping(supplier_id=sup_b.id, sku="SKU-PUMP-02", is_primary=True, unit_cost=18.00, lead_time_days=5))
+        db.add(SupplierSKUMapping(supplier_id=sup_a.id, sku="SKU-PUMP-02", is_primary=False, unit_cost=20.00, lead_time_days=4))
+
+        # SKU-COAT-03: Primary = Asia (HIGH RISK), Backup = US
+        db.add(SupplierSKUMapping(supplier_id=sup_c.id, sku="SKU-COAT-03", is_primary=True, unit_cost=8.00, lead_time_days=14))
+        db.add(SupplierSKUMapping(supplier_id=sup_a.id, sku="SKU-COAT-03", is_primary=False, unit_cost=15.00, lead_time_days=5))
+
+        # SKU-SWAP-02: Only from US
+        db.add(SupplierSKUMapping(supplier_id=sup_a.id, sku="SKU-SWAP-02", is_primary=True, unit_cost=10.00, lead_time_days=3))
+        db.flush()
+
+    # Pre-compute risk assessments for demo orders
+    for demo_ord in [ord1, ord2, ord3]:
+        assess_order_risk(demo_ord.id, db)
+
     db.commit()
 
 def get_db():

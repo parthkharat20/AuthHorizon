@@ -141,3 +141,18 @@ def test_expiring_soon_endpoint():
     finally:
         app.dependency_overrides.pop(get_gateway, None)
 
+
+def test_seed_demo_data_populates_supplier_nodes_and_risk(isolated_db_session):
+    """Verify that seed_demo_data seeds 3 supplier nodes and pre-computes risk assessments."""
+    from backend.risk.models import SupplierNodeModel, SupplierSKUMapping, RiskAssessmentModel
+    seed_demo_data(isolated_db_session)
+
+    suppliers = isolated_db_session.query(SupplierNodeModel).all()
+    assert len(suppliers) == 3
+
+    mappings = isolated_db_session.query(SupplierSKUMapping).all()
+    assert len(mappings) >= 6
+
+    assessments = isolated_db_session.query(RiskAssessmentModel).all()
+    assert len(assessments) >= 3
+

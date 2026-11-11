@@ -292,20 +292,47 @@ def seed_demo_data(db: Session):
         created_at=now - timedelta(hours=6)
     ))
 
-    consent_text = "Buyer consented to swap 'Ceramic Coating Kit Industrial' for 'Alternative Ceramic Coating Set' at $28.00."
-    ts_str = (now - timedelta(hours=6)).isoformat()
-    canonical_payload, consent_hash = compute_canonical_consent_payload(
+    # ── Consent Hash Chain: 2 Sequential Cryptographic Blocks ───
+    # Block 1: Initial WAIT Consent (linked to GENESIS_HASH)
+    consent1_text = "Buyer consented to wait for 'Ceramic Coating Kit Industrial'. Holding $30.00 until revised fulfillment."
+    ts1_str = (now - timedelta(hours=7, minutes=30)).isoformat()
+    canonical1, hash1 = compute_canonical_consent_payload(
+        order_id=ord3.id,
+        buyer_id="BUYER-PORTAL-VERIFIED",
+        paypal_order_id=ord3.paypal_order_id,
+        authorization_id=ord3.auth_id,
+        choice="WAIT",
+        displayed_text=consent1_text,
+        locale="en",
+        timestamp_utc=ts1_str,
+        prev_hash=GENESIS_HASH
+    )
+    db.add(BuyerConsentModel(
+        order_id=ord3.id,
+        buyer_id="BUYER-PORTAL-VERIFIED",
+        choice=ConsentChoice.WAIT,
+        displayed_text=consent1_text,
+        locale="en",
+        prev_hash=GENESIS_HASH,
+        consent_hash=hash1,
+        canonical_payload=canonical1,
+        timestamp=now - timedelta(hours=7, minutes=30)
+    ))
+
+    # Block 2: Subsequent SWAP Consent (cryptographically linked to Block 1 hash)
+    consent2_text = "Buyer consented to swap 'Ceramic Coating Kit Industrial' for 'Alternative Ceramic Coating Set' at $28.00."
+    ts2_str = (now - timedelta(hours=6)).isoformat()
+    canonical2, hash2 = compute_canonical_consent_payload(
         order_id=ord3.id,
         buyer_id="BUYER-PORTAL-VERIFIED",
         paypal_order_id=ord3.paypal_order_id,
         authorization_id=ord3.auth_id,
         choice="SWAP",
-        displayed_text=consent_text,
+        displayed_text=consent2_text,
         locale="en",
-        timestamp_utc=ts_str,
-        prev_hash=GENESIS_HASH
+        timestamp_utc=ts2_str,
+        prev_hash=hash1
     )
-
     db.add(BuyerConsentModel(
         order_id=ord3.id,
         buyer_id="BUYER-PORTAL-VERIFIED",
@@ -313,11 +340,11 @@ def seed_demo_data(db: Session):
         swapped_sku="SKU-SWAP-02",
         swapped_item_name="Alternative Ceramic Coating Set",
         swapped_amount=28.00,
-        displayed_text=consent_text,
+        displayed_text=consent2_text,
         locale="en",
-        prev_hash=GENESIS_HASH,
-        consent_hash=consent_hash,
-        canonical_payload=canonical_payload,
+        prev_hash=hash1,
+        consent_hash=hash2,
+        canonical_payload=canonical2,
         timestamp=now - timedelta(hours=6)
     ))
 

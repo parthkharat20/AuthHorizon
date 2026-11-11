@@ -47,6 +47,9 @@ export const MerchantDashboard: React.FC = () => {
   const [riskAssessments, setRiskAssessments] = useState<RiskAssessment[]>([]);
   const [routingPlan, setRoutingPlan] = useState<any[]>([]);
   const [assessingRisk, setAssessingRisk] = useState<boolean>(false);
+  const [chaosResult, setChaosResult] = useState<any | null>(null);
+  const [simulatingChaos, setSimulatingChaos] = useState<boolean>(false);
+  const [sseConnected, setSseConnected] = useState<boolean>(false);
 
   // Fetch system health
   const fetchHealth = async () => {
@@ -178,6 +181,88 @@ export const MerchantDashboard: React.FC = () => {
     }
   }, [selectedOrderId]);
 
+  // Real-time Server-Sent Events (SSE) listener
+  useEffect(() => {
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource('/api/events/stream');
+      es.onopen = () => {
+        setSseConnected(true);
+      };
+      es.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data);
+          if (parsed && parsed.event !== 'heartbeat') {
+            fetchOrders();
+            if (selectedOrderId) {
+              fetchOrderDetails(selectedOrderId);
+            }
+          }
+        } catch {
+          // ignore heartbeat parse errors
+        }
+      };
+      es.onerror = () => {
+        setSseConnected(false);
+      };
+    } catch {
+      setSseConnected(false);
+    }
+    return () => {
+      if (es) {
+        es.close();
+      }
+    };
+  }, [selectedOrderId]);
+
+  // Red-Team Chaos Simulator Handlers
+  const handleSimulateTamper = async () => {
+    if (!selectedOrderId) return;
+    setSimulatingChaos(true);
+    try {
+      const res = await axios.post(`/api/chaos/simulate-tamper/${selectedOrderId}`);
+      setChaosResult(res.data);
+    } catch (err: any) {
+      console.error('Tamper simulation error:', err);
+      setActionMsg(`Chaos Tamper Error: ${err.response?.data?.detail || err.message}`);
+    } finally {
+      setSimulatingChaos(false);
+    }
+  };
+
+  const handleSimulateChainBreak = async () => {
+    if (!selectedOrderId) return;
+    setSimulatingChaos(true);
+    try {
+      const res = await axios.post(`/api/chaos/simulate-chain-break/${selectedOrderId}`);
+      setChaosResult(res.data);
+    } catch (err: any) {
+      console.error('Chain break simulation error:', err);
+      setActionMsg(`Chaos Chain Break Error: ${err.response?.data?.detail || err.message}`);
+    } finally {
+      setSimulatingChaos(false);
+    }
+  };
+
+  // 1-Click Multi-Supplier Rerouting Handler
+  const handleReroute = async (sku: string, newSupplierCode: string) => {
+    if (!selectedOrderId) return;
+    try {
+      setActionMsg(`Rerouting SKU ${sku} to ${newSupplierCode}...`);
+      const res = await axios.post(`/api/orders/${selectedOrderId}/reroute`, null, {
+        params: { sku, new_supplier_code: newSupplierCode }
+      });
+      setActionMsg(`Successfully rerouted SKU ${sku} to ${newSupplierCode}: ${res.data.status}`);
+      await fetchOrderDetails(selectedOrderId);
+      await fetchRiskAssessments(selectedOrderId);
+      await fetchRoutingPlan(selectedOrderId);
+      await fetchOrders();
+    } catch (err: any) {
+      console.error('Failed to reroute:', err);
+      setActionMsg(`Reroute Error: ${err.response?.data?.detail || err.message}`);
+    }
+  };
+
   // Actions
   const handleCreateDemoOrder = async () => {
     setLoading(true);
@@ -286,6 +371,15 @@ export const MerchantDashboard: React.FC = () => {
           <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-xs font-mono">
             <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
             6× AG Grid v33 Instances Active
+          </div>
+
+          <div className={`hidden 2xl:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-mono ${
+            sseConnected 
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' 
+              : 'bg-slate-800/40 border-slate-700/40 text-slate-400'
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+            <span>{sseConnected ? 'Live SSE Stream' : 'Polling Sync'}</span>
           </div>
 
           {selectedOrderId && (
@@ -673,11 +767,87 @@ export const MerchantDashboard: React.FC = () => {
 
               {/* Tab Content 3: Cryptographic Consent Chain AG Grid */}
               {activeLedgerTab === 'consent_chain' && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
                     <span>AG Grid: Blockchain-style SHA-256 sequential consent audit trail</span>
-                    <span className="text-emerald-400">{currentOrder?.consents?.length || 0} consent record(s)</span>
+                    <span className="text-emerald-400 font-bold">{currentOrder?.consents?.length || 0} consent record(s)</span>
                   </div>
+
+                  {/* Red-Team Chaos Simulator Controls */}
+                  <div className="p-3 bg-slate-900/90 border border-rose-900/40 rounded-lg flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+                      <div>
+                        <h4 className="text-xs font-semibold text-rose-300">Red-Team Chaos Simulator (Cryptographic Tamper Defense)</h4>
+                        <p className="text-[10px] text-slate-400">Simulate payload tampering or chain deletion to test real-time SHA-256 detection</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleSimulateTamper}
+                        disabled={simulatingChaos || (currentOrder?.consents?.length || 0) === 0}
+                        className="px-2.5 py-1 text-xs font-semibold rounded bg-rose-950/70 border border-rose-700/60 text-rose-200 hover:bg-rose-900 hover:text-white transition disabled:opacity-40 flex items-center gap-1.5"
+                        title="Mutate consent payload to verify SHA-256 hash mismatch detection"
+                      >
+                        <span>⚡ Simulate Tamper</span>
+                      </button>
+                      <button
+                        onClick={handleSimulateChainBreak}
+                        disabled={simulatingChaos || (currentOrder?.consents?.length || 0) < 2}
+                        className="px-2.5 py-1 text-xs font-semibold rounded bg-amber-950/70 border border-amber-700/60 text-amber-200 hover:bg-amber-900 hover:text-white transition disabled:opacity-40 flex items-center gap-1.5"
+                        title="Break prev_hash linkage to verify block-order integrity detection"
+                      >
+                        <span>🔗 Simulate Chain Break</span>
+                      </button>
+                      {chaosResult && (
+                        <button
+                          onClick={() => { setChaosResult(null); handleVerifyEvidence(); }}
+                          className="px-2.5 py-1 text-xs font-semibold rounded bg-emerald-950/70 border border-emerald-700/60 text-emerald-200 hover:bg-emerald-900 hover:text-white transition flex items-center gap-1.5"
+                        >
+                          <span>🔄 Restore & Re-Verify</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Chaos Result Alert Banner */}
+                  {chaosResult && (
+                    <div className={`p-3 rounded-lg border text-xs font-mono ${
+                      chaosResult.tamper_detected || chaosResult.chain_break_detected
+                        ? 'bg-rose-950/50 border-rose-700/70 text-rose-200'
+                        : 'bg-emerald-950/50 border-emerald-700/70 text-emerald-200'
+                    }`}>
+                      <div className="flex items-center gap-2 font-bold mb-1">
+                        <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                        <span>CHAOS TEST VERDICT: {chaosResult.verdict}</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] mt-2 text-slate-300">
+                        {chaosResult.original_hash && (
+                          <div>
+                            <span className="text-slate-400 block">Original Hash:</span>
+                            <code className="text-emerald-400 break-all">{chaosResult.original_hash}</code>
+                          </div>
+                        )}
+                        {chaosResult.tampered_hash && (
+                          <div>
+                            <span className="text-slate-400 block">Mutated Hash:</span>
+                            <code className="text-rose-400 break-all">{chaosResult.tampered_hash}</code>
+                          </div>
+                        )}
+                        {chaosResult.removed_record_hash && (
+                          <div>
+                            <span className="text-slate-400 block">Broken Link Hash:</span>
+                            <code className="text-rose-400 break-all">{chaosResult.removed_record_hash}</code>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-slate-400 block">Integrity Status:</span>
+                          <span className="text-amber-300">{chaosResult.security_note}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <ConsentChainGrid consents={currentOrder?.consents || []} />
                 </div>
               )}
@@ -700,7 +870,11 @@ export const MerchantDashboard: React.FC = () => {
                     <span>AG Grid: Item-level disruption scoring, lead-time estimation & backup supplier mapping</span>
                     <span className="text-rose-400">{riskAssessments.length} line item(s)</span>
                   </div>
-                  <RiskAssessmentsGrid assessments={riskAssessments} orderId={selectedOrderId} />
+                  <RiskAssessmentsGrid 
+                    assessments={riskAssessments} 
+                    orderId={selectedOrderId} 
+                    onReroute={handleReroute}
+                  />
                 </div>
               )}
 

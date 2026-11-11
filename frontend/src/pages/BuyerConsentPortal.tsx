@@ -21,7 +21,7 @@ export const BuyerConsentPortal: React.FC = () => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [consentResult, setConsentResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [buyerLocale, setBuyerLocale] = useState<string>('ja');
+  const [buyerLocale, setBuyerLocale] = useState<string>('en');
   const [localizedMessage, setLocalizedMessage] = useState<string | null>(null);
   const [localizing, setLocalizing] = useState<boolean>(false);
 

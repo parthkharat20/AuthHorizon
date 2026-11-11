@@ -1,18 +1,20 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef, ColGroupDef, RowStyle, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
-import { Download, Search, ShieldAlert, Cpu, ArrowRight } from 'lucide-react';
+import { Download, Search, ShieldAlert, Cpu, ArrowRight, Repeat } from 'lucide-react';
 import { RiskBadge } from './RiskBadge';
 import { RiskAssessment } from '../types';
 
 interface RiskAssessmentsGridProps {
   assessments: RiskAssessment[];
   orderId?: number | null;
+  onReroute?: (sku: string, supplierCode: string) => void;
 }
 
 export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
   assessments,
   orderId,
+  onReroute,
 }) => {
   const gridRef = useRef<AgGridReact<RiskAssessment>>(null);
   const [quickFilter, setQuickFilter] = useState<string>('');
@@ -190,9 +192,28 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
             </div>
           ),
         },
+        {
+          headerName: '1-Click Mitigation',
+          width: 155,
+          cellRenderer: (p: ICellRendererParams<RiskAssessment>) => {
+            if (!p.data?.alternative_supplier_code || !onReroute || (p.data?.disruption_probability ?? 0) < 0.3) {
+              return null;
+            }
+            return (
+              <button
+                onClick={() => onReroute(p.data!.sku, p.data!.alternative_supplier_code!)}
+                className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-700/70 hover:bg-cyan-800 hover:text-white transition-all flex items-center gap-1 shadow-sm mt-1"
+                title={`Reroute SKU ${p.data.sku} to ${p.data.alternative_supplier || p.data.alternative_supplier_code}`}
+              >
+                <Repeat className="w-3 h-3 text-cyan-400" />
+                <span>Reroute &rarr; {p.data.alternative_supplier_code}</span>
+              </button>
+            );
+          },
+        },
       ],
     },
-  ], []);
+  ], [onReroute]);
 
   return (
     <div className="w-full space-y-2">

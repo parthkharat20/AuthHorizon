@@ -61,8 +61,9 @@ def test_seed_demo_data_populates_three_orders(isolated_db_session):
     assert ord3.total_amount == 90.00
     assert ord3.captured_amount == 88.00
     assert ord3.held_amount == 0.00
-    assert len(ord3.consent_records) == 1
-    assert ord3.consent_records[0].choice.value == "SWAP"
+    assert len(ord3.consent_records) == 2
+    assert ord3.consent_records[0].choice.value == "WAIT"
+    assert ord3.consent_records[1].choice.value == "SWAP"
     assert len(ord3.capture_audits) == 2
 
 

@@ -23,6 +23,8 @@ import { NoticeParserCard } from '../components/NoticeParserCard';
 import { OrdersGrid } from '../components/OrdersGrid';
 import { GatewayLogsGrid } from '../components/GatewayLogsGrid';
 import { ConsentChainGrid } from '../components/ConsentChainGrid';
+import { SupplierRiskGrid } from '../components/SupplierRiskGrid';
+import { SupplierNode } from '../types';
 
 export const MerchantDashboard: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -32,10 +34,12 @@ export const MerchantDashboard: React.FC = () => {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [verifyingChain, setVerifyingChain] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<any | null>(null);
-  const [activeLedgerTab, setActiveLedgerTab] = useState<'audits' | 'gateway_logs' | 'consent_chain'>('audits');
+  const [activeLedgerTab, setActiveLedgerTab] = useState<'audits' | 'gateway_logs' | 'consent_chain' | 'supplier_risk'>('audits');
   const [testingIdempotency, setTestingIdempotency] = useState<boolean>(false);
   const [idempotencyResult, setIdempotencyResult] = useState<any | null>(null);
   const [systemHealth, setSystemHealth] = useState<any | null>(null);
+  const [suppliers, setSuppliers] = useState<SupplierNode[]>([]);
+  const [assessingRisk, setAssessingRisk] = useState<boolean>(false);
 
   // Fetch system health
   const fetchHealth = async () => {
@@ -44,6 +48,33 @@ export const MerchantDashboard: React.FC = () => {
       setSystemHealth(res.data);
     } catch (e) {
       console.error('Failed to fetch health:', e);
+    }
+  };
+
+  // Fetch supplier risk nodes
+  const fetchSuppliers = async () => {
+    try {
+      const res = await axios.get('/api/risk/suppliers');
+      setSuppliers(res.data);
+    } catch (e) {
+      console.error('Failed to fetch suppliers:', e);
+    }
+  };
+
+  const handleAssessRisk = async () => {
+    if (!selectedOrderId) return;
+    setAssessingRisk(true);
+    try {
+      const res = await axios.post(`/api/orders/${selectedOrderId}/risk-assessment`);
+      setActionMsg(`Computed deterministic risk assessment for Order #${selectedOrderId}: ${res.data.assessment_count} items evaluated.`);
+      await fetchOrderDetails(selectedOrderId);
+      await fetchOrders();
+      await fetchSuppliers();
+    } catch (err: any) {
+      console.error('Failed risk assessment:', err);
+      setActionMsg(`Risk Assessment Error: ${err.response?.data?.detail || err.message}`);
+    } finally {
+      setAssessingRisk(false);
     }
   };
 
@@ -104,6 +135,7 @@ export const MerchantDashboard: React.FC = () => {
   useEffect(() => {
     fetchOrders();
     fetchHealth();
+    fetchSuppliers();
     const interval = setInterval(fetchOrders, 3000);
     return () => clearInterval(interval);
   }, []);
@@ -382,6 +414,16 @@ export const MerchantDashboard: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
                   <button
+                    onClick={handleAssessRisk}
+                    disabled={assessingRisk || !selectedOrderId}
+                    className="px-2.5 py-1 rounded-lg bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 border border-orange-500/30 text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-40"
+                    title="Compute predictive supply disruption probability across all items in this order"
+                  >
+                    <Server className={`w-3.5 h-3.5 text-orange-400 ${assessingRisk ? 'animate-spin' : ''}`} />
+                    <span>{assessingRisk ? 'Scoring...' : 'Assess Risk'}</span>
+                  </button>
+
+                  <button
                     onClick={handleTestIdempotency}
                     disabled={testingIdempotency || !currentOrder?.audits || currentOrder.audits.length === 0}
                     className="px-2.5 py-1 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-40"
@@ -455,6 +497,17 @@ export const MerchantDashboard: React.FC = () => {
                 >
                   <Link2 className="w-3.5 h-3.5 text-indigo-400" />
                   <span>Consent Hash Chain ({currentOrder?.consents?.length || 0})</span>
+                </button>
+                <button
+                  onClick={() => setActiveLedgerTab('supplier_risk')}
+                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                    activeLedgerTab === 'supplier_risk'
+                      ? 'bg-slate-800 text-slate-100 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Server className="w-3.5 h-3.5 text-orange-400" />
+                  <span>Supply Risk Graph ({suppliers.length})</span>
                 </button>
               </div>
 
@@ -567,6 +620,17 @@ export const MerchantDashboard: React.FC = () => {
                     <span className="text-emerald-400">{currentOrder?.consents?.length || 0} consent record(s)</span>
                   </div>
                   <ConsentChainGrid consents={currentOrder?.consents || []} />
+                </div>
+              )}
+
+              {/* Tab Content 4: Supply Disruption Risk Graph AG Grid */}
+              {activeLedgerTab === 'supplier_risk' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
+                    <span>AG Grid: Deterministic supplier fulfillment telemetry, port congestion & disruption probabilities</span>
+                    <span className="text-orange-400">{suppliers.length} active supplier node(s)</span>
+                  </div>
+                  <SupplierRiskGrid suppliers={suppliers} />
                 </div>
               )}
             </div>

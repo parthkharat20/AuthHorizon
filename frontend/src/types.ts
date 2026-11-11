@@ -45,6 +45,11 @@ export interface Order {
   items: LineItem[];
   captures: CaptureRecord[];
   consents: ConsentRecord[];
+  risk_assessment?: {
+    disruption_probability: number;
+    risk_tier: string;
+    estimated_delay_days: number;
+  };
   created_at: string;
   updated_at: string;
 }
@@ -124,4 +129,38 @@ export interface Fixture {
   label: string;
   language: string;
   text: string;
+}
+
+export interface RiskAssessment {
+  sku: string;
+  item_name: string;
+  supplier: string;
+  supplier_code: string;
+  supplier_region: string;
+  fulfillment_reliability: number;
+  geographic_risk: number;
+  disruption_probability: number;
+  risk_tier: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  estimated_delay_days: number;
+  recommendation: string;
+  alternative_supplier: string | null;
+  alternative_supplier_code: string | null;
+}
+
+export interface SupplierNode {
+  id: number;
+  supplier_code: string;
+  name: string;
+  region: string;
+  total_orders: number;
+  on_time_rate: number;
+  late_deliveries: number;
+  avg_delay_days: number;
+  port_congestion: number;
+  weather_risk: number;
+  geopolitical_risk: number;
+  composite_disruption_probability: number;
+  risk_tier: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  sku_count: number;
+  last_updated?: string;
 }

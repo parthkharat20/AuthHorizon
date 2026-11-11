@@ -1,12 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { ModuleRegistry, AllCommunityModule, ColDef } from 'ag-grid-community';
-import { CheckCircle2, Clock, Lock, ShieldCheck, Eye, Layers } from 'lucide-react';
+import { CheckCircle2, Clock, Lock, ShieldCheck, Eye, Layers, Download, Search } from 'lucide-react';
+import { RiskBadge } from './RiskBadge';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 export interface OrderRow {
-  id: number;
+  id: number | null;
   paypal_order_id: string;
   auth_id?: string;
   total_amount: number;
@@ -16,7 +17,12 @@ export interface OrderRow {
   items_count?: number;
   auth_expires_at?: string;
   auth_days_remaining?: number | null;
-  created_at: string;
+  risk_assessment?: {
+    disruption_probability: number;
+    risk_tier: string;
+    estimated_delay_days: number;
+  };
+  created_at?: string;
 }
 
 interface OrdersGridProps {
@@ -30,6 +36,9 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
   selectedOrderId,
   onSelectOrder,
 }) => {
+  const gridRef = useRef<AgGridReact<OrderRow>>(null);
+  const [quickFilter, setQuickFilter] = useState<string>('');
+
   // Aggregate KPIs for the AG Grid Command Center
   const kpis = useMemo(() => {
     const totalVolume = orders.reduce((acc, o) => acc + (o.total_amount || 0), 0);
@@ -40,12 +49,38 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
     return { totalVolume, totalCaptured, totalHeld, completedCount, partialCount };
   }, [orders]);
 
+  // Pinned Bottom Summary Row (Community feature)
+  const pinnedBottomRowData = useMemo<OrderRow[]>(() => [
+    {
+      id: null,
+      paypal_order_id: `LEDGER AGGREGATE (${orders.length} orders)`,
+      total_amount: kpis.totalVolume,
+      captured_amount: kpis.totalCaptured,
+      held_amount: kpis.totalHeld,
+      status: `${kpis.completedCount} Complete • ${kpis.partialCount} Split`,
+    }
+  ], [orders.length, kpis]);
+
+  // 1-Click CSV Audit Export
+  const handleExportCsv = useCallback(() => {
+    gridRef.current?.api.exportDataAsCsv({
+      fileName: `authhorizon-ledger-audit-${new Date().toISOString().split('T')[0]}.csv`,
+    });
+  }, []);
+
   const columnDefs = useMemo<ColDef<OrderRow>[]>(() => [
     {
       field: 'id',
       headerName: 'Order',
-      width: 100,
+      width: 95,
       cellRenderer: (p: any) => {
+        if (p.value === null) {
+          return (
+            <div className="flex items-center h-full font-mono text-[10px] font-extrabold text-cyan-400">
+              TOTALS
+            </div>
+          );
+        }
         const isSelected = p.value === selectedOrderId;
         return (
           <div className="flex items-center gap-1.5 h-full">
@@ -63,8 +98,8 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
     {
       field: 'paypal_order_id',
       headerName: 'PayPal Order / Auth ID',
-      flex: 1.8,
-      minWidth: 200,
+      flex: 1.6,
+      minWidth: 190,
       cellRenderer: (p: any) => {
         const authId = p.data?.auth_id;
         return (
@@ -84,7 +119,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
     },
     {
       headerName: 'Split-Hold Ratio',
-      width: 190,
+      width: 175,
       cellRenderer: (p: any) => {
         const total = p.data?.total_amount || 1;
         const captured = p.data?.captured_amount || 0;
@@ -117,7 +152,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
     {
       field: 'total_amount',
       headerName: 'Total',
-      width: 100,
+      width: 95,
       valueFormatter: (p) => `$${p.value?.toFixed(2) || '0.00'}`,
       cellClass: 'font-semibold text-slate-200 text-right font-mono',
       headerClass: 'text-right',
@@ -125,7 +160,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
     {
       field: 'captured_amount',
       headerName: 'Captured',
-      width: 110,
+      width: 105,
       valueFormatter: (p) => `$${p.value?.toFixed(2) || '0.00'}`,
       cellClass: 'text-emerald-400 font-bold text-right font-mono',
       headerClass: 'text-right',
@@ -133,7 +168,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
     {
       field: 'held_amount',
       headerName: 'Held',
-      width: 100,
+      width: 95,
       valueFormatter: (p) => `$${p.value?.toFixed(2) || '0.00'}`,
       cellClass: 'text-amber-400 font-bold text-right font-mono',
       headerClass: 'text-right',
@@ -141,7 +176,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
     {
       field: 'status',
       headerName: 'Lifecycle Status & Hold Window',
-      width: 230,
+      width: 215,
       cellRenderer: (p: any) => {
         const val = p.value || 'CREATED';
         const daysLeft = p.data?.auth_days_remaining;
@@ -184,9 +219,31 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
       },
     },
     {
-      headerName: 'Action',
-      width: 110,
+      headerName: 'Supply Risk',
+      width: 190,
       cellRenderer: (p: any) => {
+        const riskData = p.data?.risk_assessment;
+        if (!riskData || riskData.disruption_probability === undefined) {
+          return (
+            <div className="flex items-center h-full text-[10px] text-slate-500 font-mono italic">
+              Unassessed
+            </div>
+          );
+        }
+        return (
+          <RiskBadge
+            probability={riskData.disruption_probability}
+            tier={riskData.risk_tier || 'LOW'}
+            delayDays={riskData.estimated_delay_days}
+          />
+        );
+      },
+    },
+    {
+      headerName: 'Action',
+      width: 105,
+      cellRenderer: (p: any) => {
+        if (!p.data?.id) return null;
         const isSelected = p.data?.id === selectedOrderId;
         return (
           <div className="flex items-center justify-center h-full">
@@ -210,7 +267,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
   return (
     <div className="bg-slate-900/90 border border-slate-700/80 rounded-xl p-5 shadow-2xl backdrop-blur-md">
       {/* AG Grid Header & KPI Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3 pb-3 border-b border-slate-800">
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -222,7 +279,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Real-time multi-currency split authorization ledger, in-cell ratio visualizer & idempotency verification
+            Real-time multi-currency split authorization ledger, in-cell ratio visualizer & predictive risk telemetry
           </p>
         </div>
 
@@ -247,16 +304,43 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
         </div>
       </div>
 
+      {/* Quick Filter & CSV Export Toolbar (AG Grid Community v33 features) */}
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={quickFilter}
+            onChange={(e) => setQuickFilter(e.target.value)}
+            placeholder="Quick search orders, auth IDs, or status across all grid columns..."
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 font-mono transition-all"
+          />
+        </div>
+
+        <button
+          onClick={handleExportCsv}
+          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm shrink-0"
+          title="Export current grid records to canonical CSV via AG Grid API"
+        >
+          <Download className="w-3.5 h-3.5 text-cyan-400" />
+          <span>Export Ledger CSV</span>
+        </button>
+      </div>
+
       {/* The AG Grid React Table */}
-      <div style={{ height: '290px', width: '100%' }} className="ag-theme-quartz-dark rounded-lg overflow-hidden border border-slate-800 shadow-inner">
-        <AgGridReact
+      <div style={{ height: '300px', width: '100%' }} className="ag-theme-quartz-dark rounded-lg overflow-hidden border border-slate-800 shadow-inner">
+        <AgGridReact<OrderRow>
+          ref={gridRef}
           rowData={orders}
           columnDefs={columnDefs}
+          pinnedBottomRowData={pinnedBottomRowData}
+          quickFilterText={quickFilter}
           rowSelection="single"
           onRowClicked={(e) => {
             if (e.data?.id) onSelectOrder(e.data.id);
           }}
           defaultColDef={{
+            enableCellChangeFlash: true,
             sortable: true,
             filter: true,
             resizable: true,

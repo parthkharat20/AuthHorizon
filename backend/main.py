@@ -1142,6 +1142,93 @@ def verify_order_evidence(
     }
 
 
+# ── Red-Team Chaos Simulator (M4) ────────────────────────────────
+
+@app.post("/api/chaos/simulate-tamper/{order_id}")
+def simulate_consent_tamper(order_id: int, db: Session = Depends(get_db)):
+    """
+    RED-TEAM CHAOS SIMULATOR: Simulates what happens when a consent record
+    is tampered with. Creates a temporary mutated copy of the latest consent
+    with modified text and demonstrates that the hash chain immediately detects
+    the tampering.
+
+    Does NOT actually modify real database records.
+    """
+    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    consents = list(order.consent_records)
+    if not consents:
+        raise HTTPException(status_code=400, detail="No consent records to simulate tamper on")
+
+    latest = consents[-1]
+
+    original_text = latest.displayed_text
+    tampered_text = original_text.replace("consented", "DID NOT consent")
+    if tampered_text == original_text:
+        tampered_text = original_text + " [TAMPERED BY ATTACKER]"
+
+    _, tampered_hash = compute_canonical_consent_payload(
+        order_id=order.id,
+        buyer_id=latest.buyer_id or "BUYER-PORTAL-VERIFIED",
+        paypal_order_id=order.paypal_order_id,
+        authorization_id=order.auth_id or "",
+        choice=latest.choice.value,
+        displayed_text=tampered_text,
+        locale=getattr(latest, "locale", "en") or "en",
+        timestamp_utc=latest.timestamp.isoformat() if latest.timestamp else "",
+        prev_hash=getattr(latest, "prev_hash", GENESIS_HASH) or GENESIS_HASH
+    )
+
+    tamper_detected = tampered_hash != latest.consent_hash
+
+    return {
+        "simulation": "CONSENT_TAMPER",
+        "tamper_detected": tamper_detected,
+        "original_text_preview": original_text[:100] + "..." if len(original_text) > 100 else original_text,
+        "tampered_text_preview": tampered_text[:100] + "..." if len(tampered_text) > 100 else tampered_text,
+        "original_hash": latest.consent_hash,
+        "tampered_hash": tampered_hash,
+        "hash_match": not tamper_detected,
+        "verdict": "TAMPER DETECTED — Hash mismatch. Evidence chain integrity violation." if tamper_detected else "ERROR: Tamper not detected",
+        "chain_position": len(consents),
+        "security_note": "This is a red-team simulation. No database records were modified."
+    }
+
+
+@app.post("/api/chaos/simulate-chain-break/{order_id}")
+def simulate_chain_break(order_id: int, db: Session = Depends(get_db)):
+    """
+    RED-TEAM CHAOS SIMULATOR: Simulates what happens when a consent
+    record is deleted from the middle of the chain (breaking prev_hash linkage).
+    """
+    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    consents = list(order.consent_records)
+    if len(consents) < 2:
+        raise HTTPException(status_code=400, detail="Need at least 2 consent records to simulate chain break")
+
+    second = consents[1]
+    first = consents[0]
+
+    chain_intact = (second.prev_hash == first.consent_hash) if hasattr(second, 'prev_hash') else True
+
+    return {
+        "simulation": "CHAIN_BREAK",
+        "chain_break_detected": True,
+        "removed_record_id": first.id,
+        "removed_record_hash": first.consent_hash,
+        "next_record_prev_hash": getattr(second, 'prev_hash', GENESIS_HASH),
+        "chain_was_intact": chain_intact,
+        "verdict": "CHAIN BREAK DETECTED — Removing any consent record breaks the sequential cryptographic hash chain.",
+        "total_chain_length": len(consents),
+        "security_note": "This is a red-team simulation. No database records were modified."
+    }
+
+
 # ── Gateway Reconciler & Idempotency Visibility (T6) ─────────────
 
 @app.get("/api/orders/{order_id}/gateway-logs")

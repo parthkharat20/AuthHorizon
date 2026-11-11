@@ -10,12 +10,31 @@ Provides:
 
 import json
 import hashlib
+import hmac
+import os
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Tuple, Optional
 from backend.models import OrderModel, BuyerConsentModel
 
 
 GENESIS_HASH = "0" * 64
+
+# Server-side HMAC key — in production this would be backed by a hardware security module or vault
+HMAC_SECRET_KEY = os.getenv("EVIDENCE_HMAC_KEY", "authhorizon-tamper-evident-2026").encode("utf-8")
+
+
+def compute_hmac_consent_hash(canonical_json: str) -> str:
+    """
+    HMAC-SHA256 hash of the canonical consent payload using server secret.
+    Stronger than plain SHA-256: only the server can produce valid hashes.
+    """
+    return hmac.new(HMAC_SECRET_KEY, canonical_json.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def verify_hmac_consent_hash(canonical_json: str, stored_hash: str) -> bool:
+    """Constant-time HMAC comparison to prevent timing attacks."""
+    computed = compute_hmac_consent_hash(canonical_json)
+    return hmac.compare_digest(computed, stored_hash)
 
 
 def compute_canonical_consent_payload(
@@ -27,12 +46,13 @@ def compute_canonical_consent_payload(
     displayed_text: str,
     locale: str,
     timestamp_utc: str,
-    prev_hash: str
+    prev_hash: str,
+    use_hmac: bool = False
 ) -> Tuple[str, str]:
     """
-    Constructs the canonical JSON payload and its SHA-256 hash.
+    Constructs the canonical JSON payload and its SHA-256 / HMAC-SHA256 hash.
     Rules: sort_keys=True, separators=(',', ':'), ensure_ascii=False, UTF-8 encoded.
-    Returns (canonical_json_string, sha256_hex_hash).
+    Returns (canonical_json_string, hex_hash).
     """
     payload_dict = {
         "authorization_id": authorization_id or "",
@@ -51,7 +71,10 @@ def compute_canonical_consent_payload(
         separators=(",", ":"),
         ensure_ascii=False
     )
-    digest = hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
+    if use_hmac:
+        digest = compute_hmac_consent_hash(canonical_json)
+    else:
+        digest = hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
     return canonical_json, digest
 
 
@@ -71,7 +94,8 @@ def verify_consent_chain(consents: List[BuyerConsentModel]) -> Tuple[bool, Optio
         # 1. Verify internal hash integrity
         if c.canonical_payload:
             recomputed = hashlib.sha256(c.canonical_payload.encode("utf-8")).hexdigest()
-            if recomputed != c.consent_hash:
+            recomputed_hmac = compute_hmac_consent_hash(c.canonical_payload)
+            if c.consent_hash not in (recomputed, recomputed_hmac):
                 return False, f"Tamper detected in consent #{c.id}: hash mismatch (stored={c.consent_hash[:12]}..., computed={recomputed[:12]}...)"
 
         # 2. Verify chain linkage

@@ -234,6 +234,9 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
             resizable: true,
           }}
           overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-xs">No multi-supplier routing plan computed for this order yet.</div>'
+          onFirstDataRendered={(params) => {
+            params.api.sizeColumnsToFit();
+          }}
           animateRows={true}
           rowHeight={40}
           headerHeight={34}

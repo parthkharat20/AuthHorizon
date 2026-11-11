@@ -247,6 +247,9 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
             resizable: true,
           }}
           overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-xs">No supplier nodes active.</div>'
+          onFirstDataRendered={(params) => {
+            params.api.sizeColumnsToFit();
+          }}
           animateRows={true}
           rowHeight={40}
           headerHeight={34}

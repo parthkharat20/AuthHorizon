@@ -511,6 +511,9 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           onRowClicked={(e) => {
             if (e.data?.id) onSelectOrder(e.data.id);
           }}
+          onFirstDataRendered={(params) => {
+            params.api.sizeColumnsToFit();
+          }}
           animateRows={true}
           rowHeight={46}
           headerHeight={36}

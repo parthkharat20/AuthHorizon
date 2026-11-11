@@ -260,6 +260,9 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
             resizable: true,
           }}
           overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-xs">No risk assessments computed yet for this order. Click "Assess Risk" above.</div>'
+          onFirstDataRendered={(params) => {
+            params.api.sizeColumnsToFit();
+          }}
           animateRows={true}
           rowHeight={40}
           headerHeight={34}

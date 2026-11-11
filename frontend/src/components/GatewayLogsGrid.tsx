@@ -220,6 +220,9 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
             resizable: true,
           }}
           overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-xs">No PayPal REST gateway events recorded yet.</div>'
+          onFirstDataRendered={(params) => {
+            params.api.sizeColumnsToFit();
+          }}
           animateRows={true}
           rowHeight={38}
           headerHeight={32}

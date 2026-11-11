@@ -44,6 +44,7 @@ from backend.evidence import (
 )
 from backend.risk.engine import assess_order_risk, get_supplier_health_dashboard
 from backend.risk.models import SupplierNodeModel, SupplierSKUMapping, RiskAssessmentModel
+from backend.gateway.router import build_routing_plan, reroute_item_to_supplier
 
 from contextlib import asynccontextmanager
 
@@ -919,6 +920,34 @@ def get_existing_risk_assessment(order_id: int, db: Session = Depends(get_db)):
         "recommendation": a.recommendation,
         "assessed_at": a.assessed_at.isoformat() if a.assessed_at else None
     } for a in assessments]
+
+
+# ── Multi-Supplier Authorization Router (M2) ─────────────────────
+
+@app.get("/api/orders/{order_id}/routing-plan")
+def get_routing_plan(order_id: int, db: Session = Depends(get_db)):
+    """Get the multi-supplier capture routing plan for an order."""
+    plan = build_routing_plan(order_id, db)
+    if "error" in plan:
+        raise HTTPException(status_code=404, detail=plan["error"])
+    return plan
+
+
+@app.post("/api/orders/{order_id}/reroute")
+def reroute_line_item(
+    order_id: int,
+    sku: str,
+    new_supplier_code: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Reroute a line item to a different supplier node.
+    This is an internal routing decision — does NOT modify the PayPal authorization.
+    """
+    result = reroute_item_to_supplier(order_id, sku, new_supplier_code, db)
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
 
 
 @app.get("/api/orders/{order_id}")

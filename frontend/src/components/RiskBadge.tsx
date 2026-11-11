@@ -46,3 +46,4 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ probability, tier, delayDa
     </div>
   );
 };
+

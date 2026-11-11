@@ -85,3 +85,4 @@ class RiskAssessmentModel(Base):
     
     supplier_node = relationship("SupplierNodeModel", back_populates="risk_assessments",
                                   foreign_keys=[supplier_id])
+

@@ -274,3 +274,4 @@ def get_supplier_health_dashboard(db: Session) -> List[Dict]:
         })
     
     return dashboard
+

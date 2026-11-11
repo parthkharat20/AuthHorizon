@@ -135,3 +135,4 @@ def test_chaos_chain_break_endpoint(setup_test_db):
     data = break_res.json()
     assert data["chain_break_detected"] == True
     assert "CHAIN BREAK DETECTED" in data["verdict"]
+

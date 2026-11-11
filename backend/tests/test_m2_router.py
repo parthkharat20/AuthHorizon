@@ -108,3 +108,4 @@ def test_reroute_endpoint(setup_test_db):
     )
     assert reroute_res.status_code == 200
     assert reroute_res.json()["rerouted"] == True
+

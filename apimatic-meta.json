@@ -1,0 +1,27 @@
+{
+  "apiName": "AuthHorizon API",
+  "description": "Enterprise Split-Shipment Intelligence, Predictive Supply Disruption Hedging, and FTC 435 Consumer Consent Engine built on PayPal REST API v2.",
+  "version": "1.0.0",
+  "specPath": "openapi.json",
+  "languages": [
+    "typescript",
+    "python",
+    "csharp",
+    "java",
+    "go"
+  ],
+  "packages": {
+    "typescript": {
+      "name": "@authhorizon/sdk",
+      "version": "1.0.0"
+    },
+    "python": {
+      "name": "authhorizon-sdk",
+      "version": "1.0.0"
+    }
+  },
+  "docs": {
+    "theme": "dark",
+    "includeSdkGuides": true
+  }
+}

@@ -1,0 +1,1185 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AuthHorizon API",
+    "description": "Split-Shipment Intelligence & Consumer Consent Engine",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Healthcheck",
+        "operationId": "healthcheck_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fixtures": {
+      "get": {
+        "summary": "Get Sample Fixtures",
+        "operationId": "get_sample_fixtures_api_fixtures_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/create": {
+      "post": {
+        "summary": "Create Order",
+        "description": "Creates order on PayPal with intent=AUTHORIZE and saves to SQLite.",
+        "operationId": "create_order_api_orders_create_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/authorize": {
+      "post": {
+        "summary": "Authorize Order",
+        "description": "Locks authorization after buyer sandbox approval.",
+        "operationId": "authorize_order_api_orders__order_id__authorize_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/ship-partial": {
+      "post": {
+        "summary": "Ship Partial In Stock",
+        "description": "Executes partial capture ($60.00) for in-stock items with final_capture=false.\nReconciler verifies the live PayPal authorization balance.",
+        "operationId": "ship_partial_in_stock_api_orders__order_id__ship_partial_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ShipPartialRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Req"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/supplier/parse-notice": {
+      "post": {
+        "summary": "Parse Supplier Notice",
+        "description": "AI extraction + deterministic validation gate.",
+        "operationId": "parse_supplier_notice_api_supplier_parse_notice_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DelayNoticeInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/consent/submit": {
+      "post": {
+        "summary": "Submit Buyer Consent",
+        "description": "Processes buyer consent: WAIT, SWAP, or CANCEL.",
+        "operationId": "submit_buyer_consent_api_consent_submit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentSubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/fulfill-delayed": {
+      "post": {
+        "summary": "Fulfill Delayed Item",
+        "description": "Delayed item shipped: captures remaining $30.00 with final_capture=true.",
+        "operationId": "fulfill_delayed_item_api_orders__order_id__fulfill_delayed_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhooks/paypal": {
+      "post": {
+        "summary": "Paypal Webhook Handler",
+        "description": "PayPal Webhook Signature Verification and Ledger Update.",
+        "operationId": "paypal_webhook_handler_api_webhooks_paypal_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/localize-message": {
+      "post": {
+        "summary": "Localize Order Message",
+        "description": "Dynamically re-localizes buyer delay message for a specific order into the target locale.",
+        "operationId": "localize_order_message_api_orders__order_id__localize_message_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalizeMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/expiring-soon": {
+      "get": {
+        "summary": "Get Expiring Authorizations",
+        "description": "Returns active authorization holds expiring within 7 days (PayPal 29-day hold limit).",
+        "operationId": "get_expiring_authorizations_api_orders_expiring_soon_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/risk/suppliers": {
+      "get": {
+        "summary": "Get Supplier Risk Dashboard",
+        "description": "Returns all supplier nodes with computed risk profiles for AG Grid display.",
+        "operationId": "get_supplier_risk_dashboard_api_risk_suppliers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/risk-assessment": {
+      "post": {
+        "summary": "Run Risk Assessment",
+        "description": "Run predictive supply disruption risk assessment on all line items.\nALL scoring is deterministic Python. AI is NOT involved in risk computation.",
+        "operationId": "run_risk_assessment_api_orders__order_id__risk_assessment_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Existing Risk Assessment",
+        "description": "Retrieve previously computed risk assessments for an order, enriched with supplier and product telemetry.",
+        "operationId": "get_existing_risk_assessment_api_orders__order_id__risk_assessment_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/routing-plan": {
+      "get": {
+        "summary": "Get Routing Plan",
+        "description": "Get the multi-supplier capture routing plan for an order.",
+        "operationId": "get_routing_plan_api_orders__order_id__routing_plan_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/reroute": {
+      "post": {
+        "summary": "Reroute Line Item",
+        "description": "Reroute a line item to a different supplier node.\nThis is an internal routing decision \u2014 does NOT modify the PayPal authorization.",
+        "operationId": "reroute_line_item_api_orders__order_id__reroute_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          },
+          {
+            "name": "sku",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sku"
+            }
+          },
+          {
+            "name": "new_supplier_code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "New Supplier Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}": {
+      "get": {
+        "summary": "Get Order Details",
+        "operationId": "get_order_details_api_orders__order_id__get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/evidence": {
+      "get": {
+        "summary": "Get Order Evidence",
+        "description": "Returns the full canonical tamper-evident evidence bundle for an order.",
+        "operationId": "get_order_evidence_api_orders__order_id__evidence_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/evidence/download": {
+      "get": {
+        "summary": "Download Order Evidence",
+        "description": "Downloads the canonical evidence bundle as a JSON file.",
+        "operationId": "download_order_evidence_api_orders__order_id__evidence_download_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/evidence/verify": {
+      "post": {
+        "summary": "Verify Order Evidence",
+        "description": "Cryptographically verifies the local SHA-256 consent chain and cross-checks\nlive authorization status directly with the PayPal REST v2 Gateway.",
+        "operationId": "verify_order_evidence_api_orders__order_id__evidence_verify_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chaos/simulate-tamper/{order_id}": {
+      "post": {
+        "summary": "Simulate Consent Tamper",
+        "description": "RED-TEAM CHAOS SIMULATOR: Simulates what happens when a consent record\nis tampered with. Creates a temporary mutated copy of the latest consent\nwith modified text and demonstrates that the hash chain immediately detects\nthe tampering.\n\nDoes NOT actually modify real database records.",
+        "operationId": "simulate_consent_tamper_api_chaos_simulate_tamper__order_id__post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chaos/simulate-chain-break/{order_id}": {
+      "post": {
+        "summary": "Simulate Chain Break",
+        "description": "RED-TEAM CHAOS SIMULATOR: Simulates what happens when a consent\nrecord is deleted from the middle of the chain (breaking prev_hash linkage).",
+        "operationId": "simulate_chain_break_api_chaos_simulate_chain_break__order_id__post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/gateway-logs": {
+      "get": {
+        "summary": "Get Gateway Logs",
+        "description": "Returns all recorded PayPal gateway calls, request IDs, and reconciler verification events.",
+        "operationId": "get_gateway_logs_api_orders__order_id__gateway_logs_get",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{order_id}/test-idempotency": {
+      "post": {
+        "summary": "Test Idempotency Replay",
+        "description": "Idempotency Double-Click Verification:\nSubmits a duplicate capture request using the exact same PayPal-Request-Id as an existing capture.\nVerifies that:\n  1. The gateway returns the identical capture ID (RFC 7240 / PayPal REST v2 idempotency).\n  2. The engine detects the replay and DOES NOT create a duplicate financial movement.\n  3. An IDEMPOTENCY_REPLAY event is audited.",
+        "operationId": "test_idempotency_replay_api_orders__order_id__test_idempotency_post",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "summary": "List Orders",
+        "operationId": "list_orders_api_orders_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eval/summary": {
+      "get": {
+        "summary": "Get Eval Summary",
+        "description": "Returns the latest AI Safety & Eval benchmark results.",
+        "operationId": "get_eval_summary_api_eval_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eval/run": {
+      "post": {
+        "summary": "Trigger Eval Run",
+        "description": "Triggers an on-demand re-execution of the 20-notice AI Safety & Eval suite.",
+        "operationId": "trigger_eval_run_api_eval_run_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{full_path}": {
+      "get": {
+        "summary": "Serve Frontend Spa",
+        "operationId": "serve_frontend_spa__full_path__get",
+        "parameters": [
+          {
+            "name": "full_path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Full Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ConsentChoice": {
+        "type": "string",
+        "enum": [
+          "WAIT",
+          "SWAP",
+          "CANCEL"
+        ],
+        "title": "ConsentChoice"
+      },
+      "ConsentSubmitRequest": {
+        "properties": {
+          "order_id": {
+            "type": "integer",
+            "title": "Order Id"
+          },
+          "choice": {
+            "$ref": "#/components/schemas/ConsentChoice"
+          },
+          "swapped_sku": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Swapped Sku"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale",
+            "default": "en"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_id",
+          "choice"
+        ],
+        "title": "ConsentSubmitRequest"
+      },
+      "DelayNoticeInput": {
+        "properties": {
+          "order_id": {
+            "type": "integer",
+            "title": "Order Id"
+          },
+          "raw_text": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 10,
+            "title": "Raw Text"
+          },
+          "buyer_locale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buyer Locale",
+            "default": "en"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_id",
+          "raw_text"
+        ],
+        "title": "DelayNoticeInput"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LineItemSchema": {
+        "properties": {
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Amount"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Quantity",
+            "default": 1
+          },
+          "status": {
+            "$ref": "#/components/schemas/LineItemStatus",
+            "default": "IN_STOCK"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sku",
+          "name",
+          "amount"
+        ],
+        "title": "LineItemSchema"
+      },
+      "LineItemStatus": {
+        "type": "string",
+        "enum": [
+          "IN_STOCK",
+          "DELAYED",
+          "SWAPPED",
+          "CANCELLED",
+          "SHIPPED"
+        ],
+        "title": "LineItemStatus"
+      },
+      "LocalizeMessageRequest": {
+        "properties": {
+          "order_id": {
+            "type": "integer",
+            "title": "Order Id"
+          },
+          "buyer_locale": {
+            "type": "string",
+            "title": "Buyer Locale",
+            "description": "Target buyer locale: en, ja, de, da",
+            "default": "en"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_id"
+        ],
+        "title": "LocalizeMessageRequest"
+      },
+      "OrderCreateRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LineItemSchema"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency",
+            "default": "USD"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "OrderCreateRequest"
+      },
+      "ShipPartialRequest": {
+        "properties": {
+          "shipped_skus": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shipped Skus"
+          }
+        },
+        "type": "object",
+        "title": "ShipPartialRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

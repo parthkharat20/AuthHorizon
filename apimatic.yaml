@@ -1,0 +1,20 @@
+# APIMatic CodeGen & Portal Configuration
+api:
+  name: "AuthHorizon API"
+  version: "1.0.0"
+  description: "Split-Shipment Intelligence & Autonomous Supply Disruption Hedging on PayPal REST v2"
+  specification: "openapi.json"
+
+codeGen:
+  targets:
+    - language: "typescript"
+      package: "@authhorizon/sdk"
+      version: "1.0.0"
+    - language: "python"
+      package: "authhorizon-sdk"
+      version: "1.0.0"
+
+portal:
+  title: "AuthHorizon Developer Portal & SDK Reference"
+  theme: "dark"
+  enableTryItOut: true

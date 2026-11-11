@@ -146,3 +146,4 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
     </div>
   );
 };
+

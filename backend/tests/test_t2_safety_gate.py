@@ -216,14 +216,15 @@ def test_parse_notice_path_never_invokes_gateway():
     """
     spy = SpyPayPalGateway()
 
+    future_date = (date.today() + timedelta(days=15)).isoformat()
+
     # Legitimate notice text
     german_notice = (
         "Sehr geehrte Damen und Herren,\n"
-        "Lieferverzögerung bei Platine (SKU-COAT-03). Neuer Termin: 2026-11-25.\n"
+        f"Lieferverzögerung bei Platine (SKU-COAT-03). Neuer Termin: {future_date}.\n"
         "Mit freundlichen Grüßen"
     )
 
-    future_date = (date.today() + timedelta(days=15)).isoformat()
     extraction = AIExtractionResult(
         item_identifier="SKU-COAT-03",
         new_ship_date=future_date,

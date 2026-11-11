@@ -42,6 +42,8 @@ from backend.evidence import (
     generate_order_evidence_bundle,
     GENESIS_HASH
 )
+from backend.risk.engine import assess_order_risk, get_supplier_health_dashboard
+from backend.risk.models import SupplierNodeModel, SupplierSKUMapping, RiskAssessmentModel
 
 from contextlib import asynccontextmanager
 
@@ -869,6 +871,56 @@ def get_expiring_authorizations(db: Session = Depends(get_db)):
     } for o in orders]
 
 
+# ── Predictive Supply Disruption Risk Engine (M1) ─────────────────
+
+@app.get("/api/risk/suppliers")
+def get_supplier_risk_dashboard(db: Session = Depends(get_db)):
+    """Returns all supplier nodes with computed risk profiles for AG Grid display."""
+    return get_supplier_health_dashboard(db)
+
+
+@app.post("/api/orders/{order_id}/risk-assessment")
+def run_risk_assessment(order_id: int, db: Session = Depends(get_db)):
+    """
+    Run predictive supply disruption risk assessment on all line items.
+    ALL scoring is deterministic Python. AI is NOT involved in risk computation.
+    """
+    order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    results = assess_order_risk(order_id, db)
+
+    return {
+        "order_id": order_id,
+        "paypal_order_id": order.paypal_order_id,
+        "assessment_count": len(results),
+        "assessments": results,
+        "high_risk_items": [r for r in results if r.get("risk_tier") in ("HIGH", "CRITICAL")],
+        "assessed_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@app.get("/api/orders/{order_id}/risk-assessment")
+def get_existing_risk_assessment(order_id: int, db: Session = Depends(get_db)):
+    """Retrieve previously computed risk assessments for an order."""
+    assessments = db.query(RiskAssessmentModel).filter(
+        RiskAssessmentModel.order_id == order_id
+    ).all()
+
+    return [{
+        "sku": a.sku,
+        "supplier_id": a.supplier_id,
+        "fulfillment_reliability": a.fulfillment_reliability,
+        "geographic_risk": a.geographic_risk,
+        "disruption_probability": a.composite_disruption_probability,
+        "risk_tier": a.risk_tier,
+        "estimated_delay_days": a.estimated_delay_days,
+        "recommendation": a.recommendation,
+        "assessed_at": a.assessed_at.isoformat() if a.assessed_at else None
+    } for a in assessments]
+
+
 @app.get("/api/orders/{order_id}")
 def get_order_details(order_id: int, db: Session = Depends(get_db)):
     order = db.query(OrderModel).filter(OrderModel.id == order_id).first()
@@ -880,6 +932,15 @@ def get_order_details(order_id: int, db: Session = Depends(get_db)):
         now_utc = datetime.now(timezone.utc)
         exp_date = order.auth_expires_at.date() if hasattr(order.auth_expires_at, "date") else order.auth_expires_at
         days_remaining = max(0, (exp_date - now_utc.date()).days)
+
+    latest_risk = db.query(RiskAssessmentModel).filter(
+        RiskAssessmentModel.order_id == order.id
+    ).order_by(RiskAssessmentModel.composite_disruption_probability.desc()).first()
+    risk_summary = {
+        "disruption_probability": latest_risk.composite_disruption_probability,
+        "risk_tier": latest_risk.risk_tier,
+        "estimated_delay_days": latest_risk.estimated_delay_days
+    } if latest_risk else None
 
     return {
         "id": order.id,
@@ -958,7 +1019,8 @@ def get_order_details(order_id: int, db: Session = Depends(get_db)):
                 "created_at": l.created_at.isoformat() if l.created_at else None
             }
             for l in (order.gateway_logs or [])
-        ]
+        ],
+        "risk_assessment": risk_summary
     }
 
 
@@ -1164,6 +1226,15 @@ def list_orders(db: Session = Depends(get_db)):
             exp_date = o.auth_expires_at.date() if hasattr(o.auth_expires_at, "date") else o.auth_expires_at
             days_rem = max(0, (exp_date - now_utc.date()).days)
 
+        latest_risk = db.query(RiskAssessmentModel).filter(
+            RiskAssessmentModel.order_id == o.id
+        ).order_by(RiskAssessmentModel.composite_disruption_probability.desc()).first()
+        risk_summary = {
+            "disruption_probability": latest_risk.composite_disruption_probability,
+            "risk_tier": latest_risk.risk_tier,
+            "estimated_delay_days": latest_risk.estimated_delay_days
+        } if latest_risk else None
+
         res.append({
             "id": o.id,
             "paypal_order_id": o.paypal_order_id,
@@ -1175,6 +1246,7 @@ def list_orders(db: Session = Depends(get_db)):
             "items_count": len(o.line_items),
             "auth_expires_at": o.auth_expires_at.isoformat() if getattr(o, "auth_expires_at", None) else None,
             "auth_days_remaining": days_rem,
+            "risk_assessment": risk_summary,
             "created_at": o.created_at.isoformat() if o.created_at else None
         })
     return res

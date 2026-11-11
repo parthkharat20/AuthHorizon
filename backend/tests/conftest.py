@@ -9,3 +9,4 @@ from backend.database import init_db
 def setup_test_db():
     """Ensure database schema is created and migrated once per test session."""
     init_db()
+

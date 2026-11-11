@@ -160,3 +160,4 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
     </div>
   );
 };
+

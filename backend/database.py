@@ -8,6 +8,7 @@ import os
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, Session
 from backend.models import Base
+from backend.risk.models import SupplierNodeModel, SupplierSKUMapping, RiskAssessmentModel  # noqa: F401
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./authhorizon.db")
 

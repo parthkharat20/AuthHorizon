@@ -27,3 +27,4 @@ services:
           name: authhorizon
           type: web
           property: host
+

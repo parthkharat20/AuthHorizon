@@ -103,6 +103,29 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           headerClass: 'text-right',
         },
         {
+          headerName: 'Fulfillment Sparkline',
+          width: 140,
+          cellRenderer: (p: ICellRendererParams<SupplierNode>) => {
+            const rate = p.data?.on_time_rate || 0;
+            const pct = Math.round(rate * 100);
+            const barBg = pct >= 90 ? 'bg-emerald-500' : pct >= 75 ? 'bg-amber-500' : 'bg-rose-500';
+            const textColor = pct >= 90 ? 'text-emerald-400' : pct >= 75 ? 'text-amber-400' : 'text-rose-400';
+            return (
+              <div className="flex items-center gap-2 h-full w-full pr-1">
+                <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden flex">
+                  <div
+                    style={{ width: `${pct}%` }}
+                    className={`h-full ${barBg} rounded-full transition-all duration-300`}
+                  />
+                </div>
+                <span className={`text-[10px] font-mono font-bold ${textColor} shrink-0`}>
+                  {pct}%
+                </span>
+              </div>
+            );
+          },
+        },
+        {
           headerName: 'Disruption Risk',
           width: 185,
           cellRenderer: (p: ICellRendererParams<SupplierNode>) => (

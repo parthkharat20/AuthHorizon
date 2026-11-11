@@ -163,3 +163,17 @@ def test_evidence_verify_endpoint_cryptographic_sync():
     assert data["chain_valid"] is True
     assert "paypal_synced" in data
     assert "paypal_auth_status" in data
+
+
+def test_sse_events_stream_endpoint():
+    """Verify Server-Sent Events stream provides real-time ledger heartbeat."""
+    with client.stream("GET", "/api/events/stream") as response:
+        assert response.status_code == 200
+        assert "text/event-stream" in response.headers["content-type"]
+        for line in response.iter_lines():
+            if line.startswith("data:"):
+                payload = json.loads(line.replace("data:", "").strip())
+                assert payload["type"] == "LEDGER_HEARTBEAT"
+                assert "orders_count" in payload
+                assert "total_held" in payload
+                break

@@ -1401,6 +1401,48 @@ def trigger_eval_run():
     return run_evaluation()
 
 
+# ── Real-Time Server-Sent Events (SSE) Stream ────────────────────
+
+import asyncio
+from fastapi.responses import StreamingResponse
+
+@app.get("/api/events/stream")
+async def event_stream(request: Request, db: Session = Depends(get_db)):
+    """
+    Server-Sent Events (SSE) stream for real-time ledger & supply chain updates.
+    Broadcasts live order count, active hold volume, and ledger heartbeat.
+    """
+    async def event_generator():
+        while True:
+            if await request.is_disconnected():
+                break
+            try:
+                orders = db.query(OrderModel).all()
+                total_held = sum(o.held_amount or 0.0 for o in orders)
+                total_captured = sum(o.captured_amount or 0.0 for o in orders)
+                payload = {
+                    "type": "LEDGER_HEARTBEAT",
+                    "orders_count": len(orders),
+                    "total_held": round(total_held, 2),
+                    "total_captured": round(total_captured, 2),
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+                yield f"data: {json.dumps(payload)}\n\n"
+            except Exception:
+                pass
+            await asyncio.sleep(4)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+
 # ── Static SPA Serving (Render & Unified Local Server) ───────────
 
 from fastapi.staticfiles import StaticFiles

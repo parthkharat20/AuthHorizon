@@ -6,8 +6,8 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![PayPal](https://img.shields.io/badge/PayPal-REST%20v2-003087?style=flat&logo=paypal&logoColor=white)](https://developer.paypal.com/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
-[![AG Grid](https://img.shields.io/badge/AG%20Grid%20v33-6%20Instances%20%7C%2030%20Features-0070e0?style=flat)](https://www.ag-grid.com/)
-[![Tests](https://img.shields.io/badge/Tests-81%20Passed%20(100%25)-success?style=flat)](https://github.com/parthkharat20/AuthHorizon)
+[![AG Grid](https://img.shields.io/badge/AG%20Grid%20v33-6%20Instances%20%7C%2033%2B%20Features-0070e0?style=flat)](https://www.ag-grid.com/)
+[![Tests](https://img.shields.io/badge/Tests-90%20Passed%20(100%25)-success?style=flat)](https://github.com/parthkharat20/AuthHorizon)
 [![APIMatic](https://img.shields.io/badge/APIMatic-SDK%20Ready-blueviolet?style=flat)](https://www.apimatic.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -232,16 +232,54 @@ Access the application in your browser:
 
 ## AG Grid Enterprise Command Center (AG Grid $10K Bounty)
 
-AuthHorizon elevates the merchant operational cockpit with **6 distinct, highly responsive AG Grid Community v33 instances** showcasing **30 core Community features** (100% free of Enterprise license restrictions):
+AuthHorizon elevates the merchant operational cockpit with **6 distinct, highly responsive AG Grid Community v33 instances** showcasing **33+ core Community features** (100% free of Enterprise license restrictions):
 
 | Grid Instance | Component | AG Grid Community v33 Feature Highlights |
 |:---|:---|:---|
-| **1. Authorization Ledger** | `OrdersGrid.tsx` | Hierarchical **Column Groups**, `pinnedBottomRowData` (Totals), `valueGetter` (Cap %), custom `comparator`, **Custom Tooltip Component** (`OrderTooltip`), `getRowStyle` (CRITICAL / hold countdown alerts), `postSortRows`, Column State Save/Restore (`getColumnState` / `applyColumnState`), `exportDataAsCsv()`, `enableCellChangeFlash`. |
-| **2. Gateway Reconciler** | `GatewayLogsGrid.tsx` | **Column Groups** (REST Calls, Reconciler, Idempotency), `rowClassRules` (action categorization), `pagination` with page size selector, `sizeColumnsToFit()`, 1-click CSV audit export. |
-| **3. Cryptographic Chain** | `ConsentChainGrid.tsx` | **Column Groups**, **Custom Header Component** (`HashHeaderComponent` with HMAC badge), **Column Pinning** (left `#`, right `Integrity`), `getRowStyle` (GENESIS accent), `sizeColumnsToFit()`, CSV export. |
-| **4. Supplier Telemetry** | `SupplierRiskGrid.tsx` | **Column Groups**, **Interactive In-Cell Editing** (`editable: true`, `cellEditor: 'agNumberCellEditor'`, `onCellValueChanged` with dynamic risk recalculation), `checkboxSelection`, `rowSelection="multiple"`, `onSelectionChanged`. |
-| **5. Line Item Risk** | `RiskAssessmentsGrid.tsx` | **Column Groups** (Item, Supplier, Deterministic Scoring, Mitigation), `pinnedBottomRowData` (Multi-Node Composite Average), `getRowStyle` tier styling, custom `comparator`, CSV export. |
-| **6. Multi-Supplier Router** | `RoutingPlanGrid.tsx` | **Column Groups** (Warehouse Node, Hold Allocation, Item Routing), `context` parameter for dynamic `valueGetter` (Hold Share %), `pagination`, `checkboxSelection`, CSV export. |
+| **1. Authorization Ledger** | `OrdersGrid.tsx` | Hierarchical **Column Groups**, `pinnedBottomRowData` (Portfolio Totals & Composite Risk), `valueGetter` (Cap %), `valueFormatter` (Currency), `cellStyle` (dynamic numeric color styling), `loading` prop (v33 native overlay), custom `comparator`, **Custom Tooltip Component** (`OrderTooltip`), `getRowStyle` (CRITICAL / hold countdown alerts), `postSortRows`, Column State Save/Restore (`getColumnState` / `applyColumnState`), `exportDataAsCsv()`, `enableCellChangeFlash`. |
+| **2. Gateway Reconciler** | `GatewayLogsGrid.tsx` | **Column Groups** (REST Calls, Reconciler, Idempotency), `rowClassRules` (action categorization), `pagination` with page size selector, `valueFormatter` (timestamps), `sizeColumnsToFit()`, 1-click CSV audit export, `ICellRendererParams` typed renderers. |
+| **3. Cryptographic Chain** | `ConsentChainGrid.tsx` | **Column Groups**, `domLayout="autoHeight"` (responsive height auto-sizing), **Custom Header Component** (`HashHeaderComponent` with HMAC badge), **Column Pinning** (left `#`, right `Integrity`), `getRowStyle` (GENESIS accent), `valueFormatter`, `sizeColumnsToFit()`, CSV export. |
+| **4. Supplier Telemetry** | `SupplierRiskGrid.tsx` | **Column Groups**, **Row Drag & Drop** (`rowDrag: true`, `rowDragManaged={true}`), **Interactive In-Cell Editing** (`editable: true`, `cellEditor: 'agNumberCellEditor'`, `onCellValueChanged` with live risk recalculation), `checkboxSelection`, `headerCheckboxSelection`, `rowSelection="multiple"`, `onSelectionChanged`. |
+| **5. Line Item Risk** | `RiskAssessmentsGrid.tsx` | **Column Groups** (Item, Supplier, Deterministic Scoring, Mitigation), `pinnedBottomRowData` (Multi-Node Composite Average), `valueFormatter` (Risk % and Reliability %), `getRowStyle` tier styling, custom `comparator`, CSV export, `ICellRendererParams` typed renderers. |
+| **6. Multi-Supplier Router** | `RoutingPlanGrid.tsx` | **Column Groups** (Warehouse Node, Hold Allocation, Item Routing), `context` parameter for dynamic `valueGetter` (Hold Share %), `valueFormatter` (Hold segment currency), `pagination`, `checkboxSelection`, `headerCheckboxSelection`, CSV export. |
+
+### AG Grid Community v33 33-Feature Scorecard
+
+| # | AG Grid Community Feature | Implementation Mechanism & Location |
+|:---:|:---|:---|
+| 1 | **Hierarchical Column Groups** | `ColGroupDef` with nested `children` in all 6 grid components |
+| 2 | **Dynamic Calculated Values** | `valueGetter` calculating Cap % and Hold Share % via `context` |
+| 3 | **Localized Currency Formatter** | `valueFormatter` for currency (`$XX.XX`) across Orders, Routing, and Risk grids |
+| 4 | **Numeric Sorting Comparators** | Custom `comparator` functions for computed percentages and risk floats |
+| 5 | **Typed Cell Renderers** | `ICellRendererParams<T>` strongly typed renderers in all 6 components |
+| 6 | **Dynamic Row Styling** | `getRowStyle` highlighting CRITICAL risk (red), expiring holds (amber), GENESIS blocks (indigo) |
+| 7 | **Categorical Row Class Rules** | `rowClassRules` styling CAPTURE (green), VOID (red), IDEMPOTENCY (purple) rows |
+| 8 | **Custom Tooltip Component** | `OrderTooltip.tsx` via `CustomTooltipProps` from `ag-grid-react` |
+| 9 | **Custom Header Component** | `HashHeaderComponent.tsx` via `CustomHeaderProps` for cryptographic HMAC verification |
+| 10 | **Pinned Bottom Summary Rows** | `pinnedBottomRowData` on `OrdersGrid` (Portfolio Total) and `RiskAssessmentsGrid` (Composite Average) |
+| 11 | **Row Drag & Drop Reordering** | `rowDrag: true` with `rowDragManaged={true}` in `SupplierRiskGrid` |
+| 12 | **Client-Side Pagination** | `pagination={true}` with `paginationPageSizeSelector={[5, 10, 25]}` |
+| 13 | **Universal Quick Filter** | `quickFilterText` real-time search across all 6 grids |
+| 14 | **1-Click Audit CSV Export** | `api.exportDataAsCsv()` with dynamic filenames on all 6 grids |
+| 15 | **Multi-Row Checkbox Selection** | `checkboxSelection` and `headerCheckboxSelection` on Supplier and Routing grids |
+| 16 | **Interactive Cell Editing** | `editable: true` with `cellEditor: 'agNumberCellEditor'` for What-If port congestion simulations |
+| 17 | **Live Cell Value Change Handler** | `onCellValueChanged` triggering deterministic risk recalculations without server round-trip |
+| 18 | **Deterministic Row IDs** | `getRowId` using domain entity IDs across all 6 grids |
+| 19 | **Custom Empty State Template** | `overlayNoRowsTemplate` with themed monospace styling across all grids |
+| 20 | **Custom Loading Overlay** | `overlayLoadingTemplate` for async transaction retrieval |
+| 21 | **Native Loading State Prop** | `loading={loading}` prop on `OrdersGrid` wired to live React state |
+| 22 | **Post-Sort Row Prioritization** | `postSortRows` automatically hoisting CRITICAL disruption risks to top |
+| 23 | **Column Pinning (Left/Right)** | `pinned: 'left'` and `pinned: 'right'` on IDs, Actions, and Integrity indicators |
+| 24 | **Responsive Auto-Sizing** | `onFirstDataRendered` invoking `params.api.sizeColumnsToFit()` on all grids |
+| 25 | **Real-Time Financial Flashing** | `enableCellChangeFlash: true` in `defaultColDef` for live financial audit events |
+| 26 | **Context Parameter Passing** | `context={{ totalAmount }}` passed into `valueGetter` for dynamic share computations |
+| 27 | **Column State Persistence** | `getColumnState` / `applyColumnState` / `resetColumnState` with `localStorage` |
+| 28 | **Cell-Level Dynamic Styling** | `cellStyle` callback function applying threshold-based financial coloring |
+| 29 | **Responsive Auto Height** | `domLayout="autoHeight"` on `ConsentChainGrid` eliminating nested scrollbars |
+| 30 | **Themed CSS Variables** | Custom `.ag-theme-quartz-dark` palette overrides in `frontend/src/index.css` |
+| 31 | **Row Click Inspection** | `onRowClicked` and `onSelectionChanged` coordinating multi-component detail views |
+| 32 | **Animated Row Transitions** | `animateRows={true}` across all 6 grids for smooth sorting and filter shifts |
+| 33 | **Centralized Module Registration** | `ModuleRegistry.registerModules([AllCommunityModule])` globally initialized once in `main.tsx` |
 
 ---
 
@@ -259,9 +297,9 @@ Interactive Swagger documentation is auto-served at `/docs`.
 ## Test Suite
 
 ```bash
-# Run 81 unit, integration, and risk-scoring tests across 13 test suites
+# Run 90 unit, integration, and risk-scoring tests across 14 test suites
 ./venv/bin/pytest backend/tests/ -v
-# 100% green: 81 passed in ~0.85s
+# 100% green: 90 passed in ~0.88s
 ```
 
 ---

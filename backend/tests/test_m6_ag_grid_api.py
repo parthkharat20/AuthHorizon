@@ -112,3 +112,4 @@ def test_supplier_dashboard_telemetry_complete():
         assert 0.0 <= s["on_time_rate"] <= 1.0
         assert 0.0 <= s["composite_disruption_probability"] <= 1.0
         assert 0.0 <= s["port_congestion"] <= 1.0
+

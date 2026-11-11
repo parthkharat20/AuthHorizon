@@ -904,22 +904,34 @@ def run_risk_assessment(order_id: int, db: Session = Depends(get_db)):
 
 @app.get("/api/orders/{order_id}/risk-assessment")
 def get_existing_risk_assessment(order_id: int, db: Session = Depends(get_db)):
-    """Retrieve previously computed risk assessments for an order."""
+    """Retrieve previously computed risk assessments for an order, enriched with supplier and product telemetry."""
     assessments = db.query(RiskAssessmentModel).filter(
         RiskAssessmentModel.order_id == order_id
     ).all()
 
-    return [{
-        "sku": a.sku,
-        "supplier_id": a.supplier_id,
-        "fulfillment_reliability": a.fulfillment_reliability,
-        "geographic_risk": a.geographic_risk,
-        "disruption_probability": a.composite_disruption_probability,
-        "risk_tier": a.risk_tier,
-        "estimated_delay_days": a.estimated_delay_days,
-        "recommendation": a.recommendation,
-        "assessed_at": a.assessed_at.isoformat() if a.assessed_at else None
-    } for a in assessments]
+    result = []
+    for a in assessments:
+        item = db.query(LineItemModel).filter(LineItemModel.id == a.line_item_id).first()
+        alt_supplier = db.query(SupplierNodeModel).filter(SupplierNodeModel.id == a.alternative_supplier_id).first() if a.alternative_supplier_id else None
+
+        result.append({
+            "sku": a.sku,
+            "item_name": item.name if item else a.sku,
+            "supplier_id": a.supplier_id,
+            "supplier": a.supplier_node.name if a.supplier_node else "Primary Supplier",
+            "supplier_code": a.supplier_node.supplier_code if a.supplier_node else "",
+            "supplier_region": a.supplier_node.region if a.supplier_node else "US",
+            "fulfillment_reliability": a.fulfillment_reliability,
+            "geographic_risk": a.geographic_risk,
+            "disruption_probability": a.composite_disruption_probability,
+            "risk_tier": a.risk_tier,
+            "estimated_delay_days": a.estimated_delay_days,
+            "recommendation": a.recommendation,
+            "alternative_supplier": alt_supplier.name if alt_supplier else None,
+            "alternative_supplier_code": alt_supplier.supplier_code if alt_supplier else None,
+            "assessed_at": a.assessed_at.isoformat() if a.assessed_at else None
+        })
+    return result
 
 
 # ── Multi-Supplier Authorization Router (M2) ─────────────────────

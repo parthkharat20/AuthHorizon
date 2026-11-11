@@ -17,9 +17,10 @@ import uuid
 
 class CaptureNode:
     """Represents one logical capture segment in the routing plan."""
-    def __init__(self, supplier_code: str, supplier_name: str, items: List[Dict], total: float):
+    def __init__(self, supplier_code: str, supplier_name: str, items: List[Dict], total: float, region: str = "US"):
         self.supplier_code = supplier_code
         self.supplier_name = supplier_name
+        self.region = region
         self.items = items  # [{"sku": ..., "name": ..., "amount": ..., "line_item_id": ...}]
         self.total = round(total, 2)
         self.captured = False
@@ -61,7 +62,8 @@ def build_routing_plan(order_id: int, db: Session) -> Dict:
                     supplier_code=code,
                     supplier_name=supplier.name,
                     items=[],
-                    total=0.0
+                    total=0.0,
+                    region=supplier.region or "US"
                 )
             
             nodes[code].items.append({
@@ -98,7 +100,9 @@ def build_routing_plan(order_id: int, db: Session) -> Dict:
             {
                 "supplier_code": node.supplier_code,
                 "supplier_name": node.supplier_name,
+                "region": getattr(node, "region", "US"),
                 "items": node.items,
+                "items_list": ", ".join(i.get("sku", "") for i in node.items),
                 "segment_total": node.total,
                 "item_count": len(node.items)
             }
@@ -179,3 +183,4 @@ def reroute_item_to_supplier(
         "to_supplier_name": new_supplier.name,
         "updated_plan": build_routing_plan(order_id, db)
     }
+

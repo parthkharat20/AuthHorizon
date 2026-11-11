@@ -16,7 +16,10 @@ import {
   Repeat,
   Activity,
   CheckCircle2,
-  Server
+  Server,
+  ShieldAlert,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { SplitHoldBar } from '../components/SplitHoldBar';
 import { NoticeParserCard } from '../components/NoticeParserCard';
@@ -24,7 +27,9 @@ import { OrdersGrid } from '../components/OrdersGrid';
 import { GatewayLogsGrid } from '../components/GatewayLogsGrid';
 import { ConsentChainGrid } from '../components/ConsentChainGrid';
 import { SupplierRiskGrid } from '../components/SupplierRiskGrid';
-import { SupplierNode } from '../types';
+import { RiskAssessmentsGrid } from '../components/RiskAssessmentsGrid';
+import { RoutingPlanGrid } from '../components/RoutingPlanGrid';
+import { SupplierNode, RiskAssessment } from '../types';
 
 export const MerchantDashboard: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -34,11 +39,13 @@ export const MerchantDashboard: React.FC = () => {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [verifyingChain, setVerifyingChain] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<any | null>(null);
-  const [activeLedgerTab, setActiveLedgerTab] = useState<'audits' | 'gateway_logs' | 'consent_chain' | 'supplier_risk'>('audits');
+  const [activeLedgerTab, setActiveLedgerTab] = useState<'audits' | 'gateway_logs' | 'consent_chain' | 'supplier_risk' | 'risk_assessments' | 'routing_plan'>('audits');
   const [testingIdempotency, setTestingIdempotency] = useState<boolean>(false);
   const [idempotencyResult, setIdempotencyResult] = useState<any | null>(null);
   const [systemHealth, setSystemHealth] = useState<any | null>(null);
   const [suppliers, setSuppliers] = useState<SupplierNode[]>([]);
+  const [riskAssessments, setRiskAssessments] = useState<RiskAssessment[]>([]);
+  const [routingPlan, setRoutingPlan] = useState<any[]>([]);
   const [assessingRisk, setAssessingRisk] = useState<boolean>(false);
 
   // Fetch system health
@@ -61,6 +68,27 @@ export const MerchantDashboard: React.FC = () => {
     }
   };
 
+  // Fetch per-order predictive risk assessments
+  const fetchRiskAssessments = async (id: number) => {
+    try {
+      const res = await axios.get(`/api/orders/${id}/risk-assessment`);
+      const list = Array.isArray(res.data) ? res.data : (res.data.assessments || []);
+      setRiskAssessments(list);
+    } catch (e) {
+      setRiskAssessments([]);
+    }
+  };
+
+  // Fetch multi-supplier routing plan
+  const fetchRoutingPlan = async (id: number) => {
+    try {
+      const res = await axios.get(`/api/orders/${id}/routing-plan`);
+      setRoutingPlan(res.data.routing_nodes || []);
+    } catch (e) {
+      setRoutingPlan([]);
+    }
+  };
+
   const handleAssessRisk = async () => {
     if (!selectedOrderId) return;
     setAssessingRisk(true);
@@ -68,6 +96,8 @@ export const MerchantDashboard: React.FC = () => {
       const res = await axios.post(`/api/orders/${selectedOrderId}/risk-assessment`);
       setActionMsg(`Computed deterministic risk assessment for Order #${selectedOrderId}: ${res.data.assessment_count} items evaluated.`);
       await fetchOrderDetails(selectedOrderId);
+      await fetchRiskAssessments(selectedOrderId);
+      await fetchRoutingPlan(selectedOrderId);
       await fetchOrders();
       await fetchSuppliers();
     } catch (err: any) {
@@ -143,6 +173,8 @@ export const MerchantDashboard: React.FC = () => {
   useEffect(() => {
     if (selectedOrderId) {
       fetchOrderDetails(selectedOrderId);
+      fetchRiskAssessments(selectedOrderId);
+      fetchRoutingPlan(selectedOrderId);
     }
   }, [selectedOrderId]);
 
@@ -249,6 +281,11 @@ export const MerchantDashboard: React.FC = () => {
           <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-mono">
             <span className="w-2 h-2 rounded-full bg-indigo-400" />
             AI: {systemHealth?.active_llm_provider?.toUpperCase() || 'GEMINI'} FLASH (Live)
+          </div>
+
+          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-xs font-mono">
+            <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+            6× AG Grid v33 Instances Active
           </div>
 
           {selectedOrderId && (
@@ -507,7 +544,29 @@ export const MerchantDashboard: React.FC = () => {
                   }`}
                 >
                   <Server className="w-3.5 h-3.5 text-orange-400" />
-                  <span>Supply Risk Graph ({suppliers.length})</span>
+                  <span>Supplier Graph ({suppliers.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveLedgerTab('risk_assessments')}
+                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                    activeLedgerTab === 'risk_assessments'
+                      ? 'bg-slate-800 text-slate-100 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Item Risk ({riskAssessments.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveLedgerTab('routing_plan')}
+                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                    activeLedgerTab === 'routing_plan'
+                      ? 'bg-slate-800 text-slate-100 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Routing Nodes ({routingPlan.length})</span>
                 </button>
               </div>
 
@@ -631,6 +690,28 @@ export const MerchantDashboard: React.FC = () => {
                     <span className="text-orange-400">{suppliers.length} active supplier node(s)</span>
                   </div>
                   <SupplierRiskGrid suppliers={suppliers} />
+                </div>
+              )}
+
+              {/* Tab Content 5: Itemized Predictive Risk Assessments AG Grid */}
+              {activeLedgerTab === 'risk_assessments' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
+                    <span>AG Grid: Item-level disruption scoring, lead-time estimation & backup supplier mapping</span>
+                    <span className="text-rose-400">{riskAssessments.length} line item(s)</span>
+                  </div>
+                  <RiskAssessmentsGrid assessments={riskAssessments} orderId={selectedOrderId} />
+                </div>
+              )}
+
+              {/* Tab Content 6: Multi-Supplier Routing Plan AG Grid */}
+              {activeLedgerTab === 'routing_plan' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
+                    <span>AG Grid: Logical hold partitioning across fulfillment warehouses (Unified PayPal Auth)</span>
+                    <span className="text-cyan-400">{routingPlan.length} warehouse node(s)</span>
+                  </div>
+                  <RoutingPlanGrid nodes={routingPlan} totalOrderAmount={currentOrder?.total_amount || 90.0} orderId={selectedOrderId} />
                 </div>
               )}
             </div>

@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { ModuleRegistry, AllCommunityModule, ColDef, ColGroupDef, RowStyle } from 'ag-grid-community';
+import { ColDef, ColGroupDef, RowStyle, ICellRendererParams, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
 import { 
   CheckCircle2, 
   Clock, 
@@ -16,8 +16,6 @@ import {
 } from 'lucide-react';
 import { RiskBadge } from './RiskBadge';
 import { OrderTooltip } from './OrderTooltip';
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 export interface OrderRow {
   id: number | null;
@@ -122,7 +120,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           headerName: 'Order',
           width: 90,
           pinned: 'left', // Column Pinning (left)
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             if (p.value === null) {
               return (
                 <div className="flex items-center h-full font-mono text-[10px] font-extrabold text-cyan-400">
@@ -150,7 +148,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           flex: 1.5,
           minWidth: 180,
           tooltipField: 'paypal_order_id', // Custom Tooltip bound
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             const authId = p.data?.auth_id;
             return (
               <div className="flex flex-col justify-center h-full py-0.5 font-mono text-xs leading-tight">
@@ -177,7 +175,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
         {
           headerName: 'Split-Hold Ratio',
           width: 165,
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             const total = p.data?.total_amount || 1;
             const captured = p.data?.captured_amount || 0;
             const held = p.data?.held_amount || 0;
@@ -210,13 +208,13 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           headerName: 'Cap %',
           width: 75,
           // AG Grid valueGetter: computed numeric ratio
-          valueGetter: (p: any) => {
+          valueGetter: (p: ValueGetterParams<OrderRow>) => {
             if (!p.data || !p.data.total_amount) return 0;
             return Math.round((p.data.captured_amount / p.data.total_amount) * 100);
           },
           // AG Grid custom comparator for proper numerical sorting
           comparator: (a: number, b: number) => (a || 0) - (b || 0),
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<OrderRow>) => (
             <span className={`font-mono text-xs font-bold ${
               p.value === 100 ? 'text-emerald-400' : p.value > 0 ? 'text-amber-400' : 'text-slate-400'
             }`}>
@@ -237,7 +235,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           field: 'total_amount',
           headerName: 'Total',
           width: 90,
-          valueFormatter: (p: any) => `$${p.value?.toFixed(2) || '0.00'}`,
+          valueFormatter: (p: ValueFormatterParams<OrderRow>) => `$${p.value?.toFixed(2) || '0.00'}`,
           cellClass: 'font-semibold text-slate-200 text-right font-mono',
           headerClass: 'text-right',
         },
@@ -245,7 +243,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           field: 'captured_amount',
           headerName: 'Captured',
           width: 95,
-          valueFormatter: (p: any) => `$${p.value?.toFixed(2) || '0.00'}`,
+          valueFormatter: (p: ValueFormatterParams<OrderRow>) => `$${p.value?.toFixed(2) || '0.00'}`,
           cellClass: 'text-emerald-400 font-bold text-right font-mono',
           headerClass: 'text-right',
         },
@@ -253,7 +251,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           field: 'held_amount',
           headerName: 'Held',
           width: 90,
-          valueFormatter: (p: any) => `$${p.value?.toFixed(2) || '0.00'}`,
+          valueFormatter: (p: ValueFormatterParams<OrderRow>) => `$${p.value?.toFixed(2) || '0.00'}`,
           cellClass: 'text-amber-400 font-bold text-right font-mono',
           headerClass: 'text-right',
         },
@@ -268,7 +266,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           field: 'status',
           headerName: 'Lifecycle Status & Hold Window',
           width: 215,
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             const val = p.value || 'CREATED';
             const daysLeft = p.data?.auth_days_remaining;
             let badgeColor = 'bg-slate-700/60 text-slate-300 border-slate-600/50';
@@ -310,9 +308,10 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           },
         },
         {
+          field: 'risk_assessment',
           headerName: 'Supply Risk',
           width: 185,
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             const riskData = p.data?.risk_assessment;
             if (!riskData || riskData.disruption_probability === undefined) {
               return (
@@ -334,7 +333,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           headerName: 'Action',
           width: 95,
           pinned: 'right', // Column Pinning (right)
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             if (!p.data?.id) return null;
             const isSelected = p.data?.id === selectedOrderId;
             return (

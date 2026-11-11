@@ -1,10 +1,8 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { ModuleRegistry, AllCommunityModule, ColDef, ColGroupDef, RowStyle } from 'ag-grid-community';
+import { ColDef, ColGroupDef, RowStyle, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
 import { ShieldCheck, Link2, Copy, Globe2, Download, Search } from 'lucide-react';
 import { HashHeaderComponent } from './HashHeaderComponent';
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 export interface ConsentChainItem {
   id: number;
@@ -46,7 +44,7 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           field: 'choice',
           headerName: 'Buyer Choice',
           width: 120,
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<ConsentChainItem>) => {
             const choice = p.value || '';
             let badgeColor = 'bg-slate-700 text-slate-300 border-slate-600';
             if (choice === 'WAIT') badgeColor = 'bg-blue-500/20 text-blue-300 border-blue-500/40';
@@ -66,7 +64,7 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           field: 'locale',
           headerName: 'Locale',
           width: 80,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<ConsentChainItem>) => (
             <div className="flex items-center gap-1 h-full font-mono text-[11px] text-slate-300 uppercase">
               <Globe2 className="w-3 h-3 text-cyan-400" />
               {p.value || 'EN'}
@@ -86,7 +84,7 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           flex: 1.8,
           minWidth: 190,
           headerComponent: HashHeaderComponent, // Custom Header Component
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<ConsentChainItem>) => (
             <div className="flex items-center gap-1 h-full font-mono text-[10px] text-emerald-400/90 truncate">
               <span className="truncate" title={p.value}>{p.value}</span>
               {p.value && (
@@ -106,7 +104,7 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           headerName: 'Previous Link (prev_hash)',
           flex: 1.8,
           minWidth: 190,
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<ConsentChainItem>) => {
             const isGenesis = p.value?.startsWith('00000000');
             return (
               <div className="flex items-center gap-1 h-full font-mono text-[10px] text-slate-400 truncate">
@@ -130,7 +128,7 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           headerName: 'Exact Text Bound in Digest',
           flex: 2,
           minWidth: 200,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<ConsentChainItem>) => (
             <span className="text-[11px] text-slate-300 truncate block h-full flex items-center" title={p.value}>
               {p.value}
             </span>
@@ -153,7 +151,7 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           field: 'timestamp',
           headerName: 'UTC Time',
           width: 95,
-          valueFormatter: (p: any) => (p.value ? new Date(p.value).toLocaleTimeString() : '—'),
+          valueFormatter: (p: ValueFormatterParams<ConsentChainItem>) => (p.value ? new Date(p.value).toLocaleTimeString() : '—'),
           cellClass: 'font-mono text-[10px] text-slate-500',
         },
       ],

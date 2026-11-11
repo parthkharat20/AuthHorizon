@@ -1,11 +1,9 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { ModuleRegistry, AllCommunityModule, ColDef, ColGroupDef, RowStyle } from 'ag-grid-community';
+import { ColDef, ColGroupDef, RowStyle, ICellRendererParams } from 'ag-grid-community';
 import { Server, Download, Search, Edit3, CheckSquare } from 'lucide-react';
 import { RiskBadge } from './RiskBadge';
 import { SupplierNode } from '../types';
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface SupplierRiskGridProps {
   suppliers: SupplierNode[];
@@ -47,7 +45,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           headerName: 'Supplier Node',
           width: 145,
           pinned: 'left',
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<SupplierNode>) => (
             <div className="flex items-center gap-1.5 h-full">
               <Server className="w-3.5 h-3.5 text-orange-400 shrink-0" />
               <span className="font-mono text-xs font-bold text-orange-300">
@@ -61,7 +59,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           headerName: 'Warehouse / Supplier Name',
           flex: 1.3,
           minWidth: 160,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<SupplierNode>) => (
             <div className="flex flex-col justify-center h-full py-0.5">
               <span className="text-slate-100 font-semibold text-xs truncate">{p.value}</span>
             </div>
@@ -71,7 +69,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           field: 'region',
           headerName: 'Region',
           width: 90,
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<SupplierNode>) => {
             const flag = p.value === 'US' ? '🇺🇸' : p.value === 'DE' ? '🇩🇪' : p.value === 'CN' ? '🇨🇳' : '🌐';
             return (
               <div className="flex items-center gap-1 h-full font-mono text-xs text-slate-300">
@@ -92,7 +90,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           field: 'on_time_rate',
           headerName: 'On-Time Rate',
           width: 115,
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<SupplierNode>) => {
             const pct = Math.round((p.value || 0) * 100);
             const color = pct >= 90 ? 'text-emerald-400' : pct >= 75 ? 'text-amber-400' : 'text-rose-400';
             return (
@@ -106,7 +104,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
         {
           headerName: 'Disruption Risk',
           width: 185,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<SupplierNode>) => (
             <RiskBadge
               probability={p.data?.composite_disruption_probability || 0}
               tier={p.data?.risk_tier || 'LOW'}
@@ -123,7 +121,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           cellEditor: 'agNumberCellEditor',
           cellEditorParams: { min: 0, max: 1, step: 0.05 },
           cellClass: 'cursor-pointer hover:bg-slate-800/80 transition-colors',
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<SupplierNode>) => {
             const pct = Math.round((p.value || 0) * 100);
             return (
               <div className="flex items-center gap-1.5 h-full" title="Double click to edit and simulate what-if risk">
@@ -143,7 +141,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           field: 'sku_count',
           headerName: 'SKUs Mapped',
           width: 105,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<SupplierNode>) => (
             <div className="flex items-center justify-center h-full">
               <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
                 {p.value} SKU{p.value === 1 ? '' : 's'}

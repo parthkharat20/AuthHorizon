@@ -1,11 +1,9 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { ModuleRegistry, AllCommunityModule, ColDef, ColGroupDef, RowStyle } from 'ag-grid-community';
+import { ColDef, ColGroupDef, RowStyle, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
 import { Download, Search, ShieldAlert, Cpu, ArrowRight } from 'lucide-react';
 import { RiskBadge } from './RiskBadge';
 import { RiskAssessment } from '../types';
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 interface RiskAssessmentsGridProps {
   assessments: RiskAssessment[];
@@ -26,7 +24,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
   }, [orderId]);
 
   // Aggregate averages for pinned bottom row in AG Grid Community v33
-  const pinnedBottomRowData = useMemo<any[]>(() => {
+  const pinnedBottomRowData = useMemo<Partial<RiskAssessment>[]>(() => {
     if (assessments.length === 0) return [];
     const avgProb = assessments.reduce((acc, a) => acc + (a.disruption_probability || 0), 0) / assessments.length;
     const avgDelay = assessments.reduce((acc, a) => acc + (a.estimated_delay_days || 0), 0) / assessments.length;
@@ -58,7 +56,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           headerName: 'SKU',
           width: 125,
           pinned: 'left', // Column Pinning (left)
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<RiskAssessment>) => {
             const isAggregate = p.value === 'ORDER COMPOSITE';
             return (
               <span className={`font-mono text-xs font-bold ${
@@ -74,7 +72,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           headerName: 'Component Description',
           flex: 1.3,
           minWidth: 160,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<RiskAssessment>) => (
             <span className="text-xs font-semibold text-slate-100 truncate block h-full flex items-center" title={p.value}>
               {p.value}
             </span>
@@ -92,7 +90,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           headerName: 'Primary Supplier',
           flex: 1.1,
           minWidth: 150,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<RiskAssessment>) => (
             <span className="text-xs font-mono text-orange-300 truncate block h-full flex items-center" title={p.value}>
               {p.value}
             </span>
@@ -102,7 +100,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           field: 'supplier_region',
           headerName: 'Region',
           width: 85,
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<RiskAssessment>) => {
             const flag = p.value === 'US' ? '🇺🇸' : p.value === 'DE' ? '🇩🇪' : p.value === 'CN' ? '🇨🇳' : '🌐';
             return (
               <div className="flex items-center gap-1 h-full font-mono text-xs text-slate-300">
@@ -117,7 +115,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           headerName: 'Backup Node',
           flex: 1.1,
           minWidth: 140,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<RiskAssessment>) => (
             <span className="text-xs font-mono text-cyan-400 truncate block h-full flex items-center" title={p.value || 'None available'}>
               {p.value ? `↳ ${p.value}` : '— (Sole Source)'}
             </span>
@@ -134,7 +132,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           field: 'fulfillment_reliability',
           headerName: 'Reliability',
           width: 95,
-          valueFormatter: (p: any) => `${Math.round((p.value || 0) * 100)}%`,
+          valueFormatter: (p: ValueFormatterParams<RiskAssessment>) => `${Math.round((p.value || 0) * 100)}%`,
           cellClass: 'font-mono text-xs text-right text-emerald-400 font-semibold',
           headerClass: 'text-right',
         },
@@ -142,7 +140,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           field: 'geographic_risk',
           headerName: 'Geo Factor',
           width: 95,
-          valueFormatter: (p: any) => `${Math.round((p.value || 0) * 100)}%`,
+          valueFormatter: (p: ValueFormatterParams<RiskAssessment>) => `${Math.round((p.value || 0) * 100)}%`,
           cellClass: 'font-mono text-xs text-right text-amber-400',
           headerClass: 'text-right',
         },
@@ -151,7 +149,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           headerName: 'Disruption Risk',
           width: 185,
           comparator: (a: number, b: number) => (a || 0) - (b || 0),
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<RiskAssessment>) => (
             <RiskBadge
               probability={p.data?.disruption_probability || 0}
               tier={p.data?.risk_tier || 'LOW'}
@@ -163,7 +161,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           field: 'estimated_delay_days',
           headerName: 'Est. Delay',
           width: 90,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<RiskAssessment>) => (
             <span className={`font-mono text-xs font-bold ${
               p.value > 7 ? 'text-rose-400' : p.value > 0 ? 'text-amber-400' : 'text-slate-400'
             }`}>
@@ -184,7 +182,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           flex: 2,
           minWidth: 240,
           tooltipField: 'recommendation',
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<RiskAssessment>) => (
             <div className="flex items-center gap-1.5 h-full text-xs text-slate-300 truncate" title={p.value}>
               <ArrowRight className="w-3 h-3 text-cyan-400 shrink-0" />
               <span className="truncate">{p.value}</span>

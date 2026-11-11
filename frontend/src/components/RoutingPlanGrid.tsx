@@ -1,9 +1,7 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { ModuleRegistry, AllCommunityModule, ColDef, ColGroupDef, RowStyle } from 'ag-grid-community';
+import { ColDef, ColGroupDef, RowStyle, ICellRendererParams, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
 import { Server, Download, Search, CheckSquare, Layers, Lock } from 'lucide-react';
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 export interface RoutingNodeItem {
   supplier_code: string;
@@ -59,7 +57,7 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
           headerName: 'Node Code',
           width: 145,
           pinned: 'left',
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<RoutingNodeItem>) => (
             <div className="flex items-center gap-1.5 h-full">
               <Server className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
               <span className="font-mono text-xs font-bold text-cyan-300">
@@ -73,7 +71,7 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
           headerName: 'Warehouse / Facility Name',
           flex: 1.3,
           minWidth: 160,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<RoutingNodeItem>) => (
             <span className="text-slate-100 font-semibold text-xs truncate block h-full flex items-center" title={p.value}>
               {p.value}
             </span>
@@ -83,7 +81,7 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
           field: 'region',
           headerName: 'Region',
           width: 90,
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<RoutingNodeItem>) => {
             const flag = p.value === 'US' ? '🇺🇸' : p.value === 'DE' ? '🇩🇪' : p.value === 'CN' ? '🇨🇳' : '🌐';
             return (
               <div className="flex items-center gap-1 h-full font-mono text-xs text-slate-300">
@@ -104,7 +102,7 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
           field: 'segment_total',
           headerName: 'Hold Segment',
           width: 120,
-          valueFormatter: (p: any) => `$${Number(p.value || 0).toFixed(2)}`,
+          valueFormatter: (p: ValueFormatterParams<RoutingNodeItem>) => `$${Number(p.value || 0).toFixed(2)}`,
           cellClass: 'font-mono text-xs text-right font-bold text-emerald-400',
           headerClass: 'text-right',
         },
@@ -112,13 +110,13 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
           headerName: 'Hold Share %',
           width: 110,
           // AG Grid valueGetter using context.totalAmount
-          valueGetter: (p: any) => {
+          valueGetter: (p: ValueGetterParams<RoutingNodeItem>) => {
             const total = p.context?.totalAmount || 90.0;
             if (total <= 0) return 0;
             return Math.round(((p.data?.segment_total || 0) / total) * 100);
           },
           comparator: (a: number, b: number) => (a || 0) - (b || 0),
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<RoutingNodeItem>) => {
             const pct = p.value || 0;
             return (
               <div className="flex items-center justify-end gap-1.5 h-full font-mono text-xs">
@@ -142,7 +140,7 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
           field: 'item_count',
           headerName: 'Items',
           width: 85,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<RoutingNodeItem>) => (
             <div className="flex items-center justify-center h-full">
               <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
                 {p.value} item{p.value === 1 ? '' : 's'}
@@ -156,7 +154,7 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
           flex: 1.8,
           minWidth: 180,
           // Extract SKUs from item array or items_list string
-          valueGetter: (p: any) => {
+          valueGetter: (p: ValueGetterParams<RoutingNodeItem>) => {
             if (p.data?.items_list) return p.data.items_list;
             if (p.data?.items && Array.isArray(p.data.items)) {
               return p.data.items.map((it: any) => it.sku).join(', ');
@@ -164,7 +162,7 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
             return '—';
           },
           tooltipField: 'items_list',
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<RoutingNodeItem>) => (
             <div className="flex items-center gap-1.5 h-full font-mono text-[11px] text-cyan-300 truncate" title={p.value}>
               <Layers className="w-3 h-3 text-indigo-400 shrink-0" />
               <span className="truncate">{p.value}</span>

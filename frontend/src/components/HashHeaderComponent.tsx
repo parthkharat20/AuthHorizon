@@ -13,3 +13,4 @@ export const HashHeaderComponent: React.FC<CustomHeaderProps> = (props) => {
     </div>
   );
 };
+

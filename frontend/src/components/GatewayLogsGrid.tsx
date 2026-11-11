@@ -1,9 +1,7 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { ModuleRegistry, AllCommunityModule, ColDef, ColGroupDef } from 'ag-grid-community';
+import { ColDef, ColGroupDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
 import { ShieldCheck, AlertTriangle, Repeat, Server, Copy, Download, Search } from 'lucide-react';
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 export interface GatewayLogItem {
   id: number;
@@ -41,7 +39,7 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
           headerName: 'PayPal Action',
           width: 155,
           pinned: 'left', // Column Pinning (left)
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<GatewayLogItem>) => {
             const action = p.value || '';
             let badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
             let Icon = Server;
@@ -69,7 +67,7 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
           field: 'status_code',
           headerName: 'HTTP',
           width: 85,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<GatewayLogItem>) => (
             <span className="font-mono text-xs text-slate-300">
               {p.value ? `HTTP ${p.value}` : '—'}
             </span>
@@ -80,7 +78,7 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
           headerName: 'REST Endpoint',
           flex: 1.4,
           minWidth: 180,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<GatewayLogItem>) => (
             <span className="font-mono text-[10px] text-slate-400 truncate block h-full flex items-center" title={p.value}>
               {p.value}
             </span>
@@ -97,7 +95,7 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
           field: 'reconciler_status',
           headerName: 'Verification',
           width: 150,
-          cellRenderer: (p: any) => {
+          cellRenderer: (p: ICellRendererParams<GatewayLogItem>) => {
             const isVerified = p.value === 'VERIFIED';
             return (
               <div className="flex items-center h-full">
@@ -127,7 +125,7 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
           headerName: 'Independent Balance Audit',
           flex: 1.8,
           minWidth: 200,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<GatewayLogItem>) => (
             <span className="text-[11px] text-slate-300 truncate block h-full flex items-center" title={p.value}>
               {p.value || '—'}
             </span>
@@ -145,7 +143,7 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
           headerName: 'PayPal-Request-Id',
           flex: 1.4,
           minWidth: 170,
-          cellRenderer: (p: any) => (
+          cellRenderer: (p: ICellRendererParams<GatewayLogItem>) => (
             <div className="flex items-center gap-1 h-full font-mono text-[11px] text-cyan-400/90 truncate">
               <span className="truncate" title={p.value}>{p.value}</span>
               {p.value && (
@@ -164,7 +162,7 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
           field: 'created_at',
           headerName: 'Timestamp',
           width: 95,
-          valueFormatter: (p: any) => (p.value ? new Date(p.value).toLocaleTimeString() : '—'),
+          valueFormatter: (p: ValueFormatterParams<GatewayLogItem>) => (p.value ? new Date(p.value).toLocaleTimeString() : '—'),
           cellClass: 'font-mono text-[10px] text-slate-500',
         },
       ],

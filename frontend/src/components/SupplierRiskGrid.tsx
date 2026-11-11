@@ -45,6 +45,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           headerName: 'Supplier Node',
           width: 145,
           pinned: 'left',
+          rowDrag: true, // AG Grid Community Row Drag & Drop
           cellRenderer: (p: ICellRendererParams<SupplierNode>) => (
             <div className="flex items-center gap-1.5 h-full">
               <Server className="w-3.5 h-3.5 text-orange-400 shrink-0" />
@@ -202,6 +203,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           rowData={suppliers}
           columnDefs={columnDefs}
           quickFilterText={quickFilter}
+          rowDragManaged={true}
           rowSelection="multiple"
           getRowId={(p) => p.data?.supplier_code || String(p.data?.id || Math.random())}
           // Highlight high-risk supplier nodes with getRowStyle

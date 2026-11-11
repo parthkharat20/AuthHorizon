@@ -183,9 +183,10 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
         </button>
       </div>
 
-      <div style={{ height: '240px', width: '100%' }} className="ag-theme-quartz-dark rounded-lg overflow-hidden border border-slate-800 shadow-inner">
+      <div style={{ width: '100%', minHeight: '130px' }} className="ag-theme-quartz-dark rounded-lg overflow-hidden border border-slate-800 shadow-inner">
         <AgGridReact<ConsentChainItem>
           ref={gridRef}
+          domLayout="autoHeight"
           rowData={consents}
           columnDefs={columnDefs}
           quickFilterText={quickFilter}

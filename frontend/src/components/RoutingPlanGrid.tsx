@@ -102,7 +102,7 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
           field: 'segment_total',
           headerName: 'Hold Segment',
           width: 120,
-          valueFormatter: (p: ValueFormatterParams<RoutingNodeItem>) => `$${Number(p.value || 0).toFixed(2)}`,
+          valueFormatter: (p: ValueFormatterParams<RoutingNodeItem>) => p.value != null ? `$${Number(p.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—',
           cellClass: 'font-mono text-xs text-right font-bold text-emerald-400',
           headerClass: 'text-right',
         },

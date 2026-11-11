@@ -148,6 +148,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           field: 'disruption_probability',
           headerName: 'Disruption Risk',
           width: 185,
+          valueFormatter: (p: ValueFormatterParams<RiskAssessment>) => p.value != null ? `${(Number(p.value) * 100).toFixed(1)}%` : '—',
           comparator: (a: number, b: number) => (a || 0) - (b || 0),
           cellRenderer: (p: ICellRendererParams<RiskAssessment>) => (
             <RiskBadge

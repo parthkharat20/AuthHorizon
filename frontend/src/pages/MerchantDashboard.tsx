@@ -746,6 +746,7 @@ export const MerchantDashboard: React.FC = () => {
           orders={orders}
           selectedOrderId={selectedOrderId}
           onSelectOrder={(id) => setSelectedOrderId(id)}
+          loading={loading}
         />
       </main>
     </div>

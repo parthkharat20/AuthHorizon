@@ -40,12 +40,14 @@ interface OrdersGridProps {
   orders: OrderRow[];
   selectedOrderId: number | null;
   onSelectOrder: (orderId: number) => void;
+  loading?: boolean;
 }
 
 export const OrdersGrid: React.FC<OrdersGridProps> = ({
   orders,
   selectedOrderId,
   onSelectOrder,
+  loading,
 }) => {
   const gridRef = useRef<AgGridReact<OrderRow>>(null);
   const [quickFilter, setQuickFilter] = useState<string>('');
@@ -70,8 +72,14 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
       captured_amount: kpis.totalCaptured,
       held_amount: kpis.totalHeld,
       status: `${kpis.completedCount} Complete • ${kpis.partialCount} Split`,
+      auth_days_remaining: null,
+      risk_assessment: {
+        disruption_probability: orders.reduce((s, o) => s + (o.risk_assessment?.disruption_probability || 0), 0) / Math.max(orders.length, 1),
+        risk_tier: 'COMPOSITE',
+        estimated_delay_days: 0,
+      },
     }
-  ], [orders.length, kpis]);
+  ], [orders, kpis]);
 
   // 1-Click CSV Audit Export (AG Grid Community API)
   const handleExportCsv = useCallback(() => {
@@ -235,7 +243,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           field: 'total_amount',
           headerName: 'Total',
           width: 90,
-          valueFormatter: (p: ValueFormatterParams<OrderRow>) => `$${p.value?.toFixed(2) || '0.00'}`,
+          valueFormatter: (p: ValueFormatterParams<OrderRow>) => p.value != null ? `$${Number(p.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—',
           cellClass: 'font-semibold text-slate-200 text-right font-mono',
           headerClass: 'text-right',
         },
@@ -243,17 +251,23 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           field: 'captured_amount',
           headerName: 'Captured',
           width: 95,
-          valueFormatter: (p: ValueFormatterParams<OrderRow>) => `$${p.value?.toFixed(2) || '0.00'}`,
+          valueFormatter: (p: ValueFormatterParams<OrderRow>) => p.value != null ? `$${Number(p.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—',
           cellClass: 'text-emerald-400 font-bold text-right font-mono',
           headerClass: 'text-right',
+          cellStyle: (p) => (Number(p.value) > 0 ? { color: '#34d399' } : undefined),
         },
         {
           field: 'held_amount',
           headerName: 'Held',
           width: 90,
-          valueFormatter: (p: ValueFormatterParams<OrderRow>) => `$${p.value?.toFixed(2) || '0.00'}`,
+          valueFormatter: (p: ValueFormatterParams<OrderRow>) => p.value != null ? `$${Number(p.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—',
           cellClass: 'text-amber-400 font-bold text-right font-mono',
           headerClass: 'text-right',
+          cellStyle: (p) => {
+            if (!p.value) return undefined;
+            if (Number(p.value) > 50) return { color: '#f59e0b', fontWeight: 'bold' };
+            return { color: '#fbbf24' };
+          },
         },
       ],
     },
@@ -455,6 +469,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
       <div style={{ height: '320px', width: '100%' }} className="ag-theme-quartz-dark rounded-lg overflow-hidden border border-slate-800 shadow-inner">
         <AgGridReact<OrderRow>
           ref={gridRef}
+          loading={loading}
           rowData={orders}
           columnDefs={columnDefs}
           pinnedBottomRowData={pinnedBottomRowData}

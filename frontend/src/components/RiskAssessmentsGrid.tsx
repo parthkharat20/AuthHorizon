@@ -202,10 +202,10 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
             return (
               <button
                 onClick={() => onReroute(p.data!.sku, p.data!.alternative_supplier_code!)}
-                className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-700/70 hover:bg-cyan-800 hover:text-white transition-all flex items-center gap-1 shadow-sm mt-1"
+                className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0070BA]/20 text-blue-300 border border-[#0070BA]/60 hover:bg-[#0070BA] hover:text-white transition-all flex items-center gap-1 shadow-sm mt-1"
                 title={`Reroute SKU ${p.data.sku} to ${p.data.alternative_supplier || p.data.alternative_supplier_code}`}
               >
-                <Repeat className="w-3 h-3 text-cyan-400" />
+                <Repeat className="w-3 h-3 text-[#0070BA]" />
                 <span>Reroute &rarr; {p.data.alternative_supplier_code}</span>
               </button>
             );
@@ -227,22 +227,22 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
               value={quickFilter}
               onChange={(e) => setQuickFilter(e.target.value)}
               placeholder="Search SKUs, suppliers, or recommendations..."
-              className="w-full pl-7 pr-2 py-1 rounded bg-slate-950/70 border border-slate-800 text-[11px] text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 font-mono"
+              className="w-full pl-7 pr-2 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-[11px] text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-[#0070BA] font-mono"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">
-            Order #{orderId || '—'} Items: <strong className="text-cyan-400">{assessments.length}</strong>
+            Order #{orderId || '—'} Items: <strong className="text-[#F1F5F9]">{assessments.length}</strong>
           </span>
 
           <button
             onClick={handleExportCsv}
-            className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] font-medium flex items-center gap-1 transition-all shrink-0"
+            className="px-2.5 py-1 rounded bg-[#0D111A] hover:bg-[#141B29] text-slate-300 border border-[#1E2638] text-[11px] font-medium flex items-center gap-1 transition-all shrink-0"
             title="Export predictive risk assessments to CSV"
           >
-            <Download className="w-3 h-3 text-cyan-400" />
+            <Download className="w-3 h-3 text-slate-400" />
             <span>Export Risk CSV</span>
           </button>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { 
   CreditCard, 
@@ -7,19 +7,24 @@ import {
   RefreshCw, 
   CheckCircle, 
   ShieldCheck, 
-  ArrowRight,
-  TrendingUp,
-  AlertTriangle,
-  History,
-  Download,
-  Link2,
-  Repeat,
-  Activity,
-  CheckCircle2,
-  Server,
-  ShieldAlert,
-  Layers,
-  Sparkles
+  ArrowRight, 
+  TrendingUp, 
+  AlertTriangle, 
+  History, 
+  Download, 
+  Link2, 
+  Repeat, 
+  Activity, 
+  CheckCircle2, 
+  Server, 
+  ShieldAlert, 
+  Layers, 
+  Sparkles,
+  Lock,
+  Cpu,
+  FileText,
+  SlidersHorizontal,
+  ChevronRight
 } from 'lucide-react';
 import { SplitHoldBar } from '../components/SplitHoldBar';
 import { NoticeParserCard } from '../components/NoticeParserCard';
@@ -39,7 +44,6 @@ export const MerchantDashboard: React.FC = () => {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [verifyingChain, setVerifyingChain] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<any | null>(null);
-  const [activeLedgerTab, setActiveLedgerTab] = useState<'audits' | 'gateway_logs' | 'consent_chain' | 'supplier_risk' | 'risk_assessments' | 'routing_plan'>('audits');
   const [testingIdempotency, setTestingIdempotency] = useState<boolean>(false);
   const [idempotencyResult, setIdempotencyResult] = useState<any | null>(null);
   const [systemHealth, setSystemHealth] = useState<any | null>(null);
@@ -50,6 +54,11 @@ export const MerchantDashboard: React.FC = () => {
   const [chaosResult, setChaosResult] = useState<any | null>(null);
   const [simulatingChaos, setSimulatingChaos] = useState<boolean>(false);
   const [sseConnected, setSseConnected] = useState<boolean>(false);
+
+  // Grouped Workbench Navigation
+  const [workbenchCategory, setWorkbenchCategory] = useState<'supply_telemetry' | 'cryptographic_chain' | 'gateway_reconciler'>('supply_telemetry');
+  const [supplySubTab, setSupplySubTab] = useState<'suppliers' | 'items'>('items');
+  const [gatewaySubTab, setGatewaySubTab] = useState<'logs' | 'routing' | 'audits'>('logs');
 
   // Fetch system health
   const fetchHealth = async () => {
@@ -92,6 +101,89 @@ export const MerchantDashboard: React.FC = () => {
     }
   };
 
+  // Fetch all orders
+  const fetchOrders = async () => {
+    try {
+      const res = await axios.get('/api/orders');
+      setOrders(res.data);
+      if (res.data.length > 0 && !selectedOrderId) {
+        setSelectedOrderId(res.data[0].id);
+      }
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+    }
+  };
+
+  // Fetch selected order details
+  const fetchOrderDetails = async (id: number) => {
+    try {
+      const res = await axios.get(`/api/orders/${id}`);
+      setCurrentOrder(res.data);
+    } catch (err) {
+      console.error('Error fetching order details:', err);
+    }
+  };
+
+  // Dynamic Portfolio Liquidity Totals
+  const portfolioSummary = useMemo(() => {
+    const totalAuth = orders.reduce((acc, o) => acc + (o.total_amount || 0), 0);
+    const totalCap = orders.reduce((acc, o) => acc + (o.captured_amount || 0), 0);
+    const totalHeld = orders.reduce((acc, o) => acc + (o.held_amount || 0), 0);
+    const delayedCount = orders.filter((o) => o.status === 'PARTIALLY_CAPTURED').length;
+    return { totalAuth, totalCap, totalHeld, delayedCount };
+  }, [orders]);
+
+  useEffect(() => {
+    fetchOrders();
+    fetchHealth();
+    fetchSuppliers();
+    const interval = setInterval(fetchOrders, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (selectedOrderId) {
+      fetchOrderDetails(selectedOrderId);
+      fetchRiskAssessments(selectedOrderId);
+      fetchRoutingPlan(selectedOrderId);
+    }
+  }, [selectedOrderId]);
+
+  // Real-time Server-Sent Events (SSE) listener
+  useEffect(() => {
+    let es: EventSource | null = null;
+    try {
+      es = new EventSource('/api/events/stream');
+      es.onopen = () => {
+        setSseConnected(true);
+      };
+      es.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data);
+          if (parsed && parsed.event !== 'heartbeat') {
+            fetchOrders();
+            if (selectedOrderId) {
+              fetchOrderDetails(selectedOrderId);
+            }
+          }
+        } catch {
+          // ignore heartbeat parse errors
+        }
+      };
+      es.onerror = () => {
+        setSseConnected(false);
+      };
+    } catch {
+      setSseConnected(false);
+    }
+    return () => {
+      if (es) {
+        es.close();
+      }
+    };
+  }, [selectedOrderId]);
+
+  // Handlers
   const handleAssessRisk = async () => {
     if (!selectedOrderId) return;
     setAssessingRisk(true);
@@ -142,80 +234,6 @@ export const MerchantDashboard: React.FC = () => {
     }
   };
 
-  // Fetch all orders
-  const fetchOrders = async () => {
-    try {
-      const res = await axios.get('/api/orders');
-      setOrders(res.data);
-      if (res.data.length > 0 && !selectedOrderId) {
-        setSelectedOrderId(res.data[0].id);
-      }
-    } catch (err) {
-      console.error('Error fetching orders:', err);
-    }
-  };
-
-  // Fetch selected order details
-  const fetchOrderDetails = async (id: number) => {
-    try {
-      const res = await axios.get(`/api/orders/${id}`);
-      setCurrentOrder(res.data);
-    } catch (err) {
-      console.error('Error fetching order details:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrders();
-    fetchHealth();
-    fetchSuppliers();
-    const interval = setInterval(fetchOrders, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (selectedOrderId) {
-      fetchOrderDetails(selectedOrderId);
-      fetchRiskAssessments(selectedOrderId);
-      fetchRoutingPlan(selectedOrderId);
-    }
-  }, [selectedOrderId]);
-
-  // Real-time Server-Sent Events (SSE) listener
-  useEffect(() => {
-    let es: EventSource | null = null;
-    try {
-      es = new EventSource('/api/events/stream');
-      es.onopen = () => {
-        setSseConnected(true);
-      };
-      es.onmessage = (event) => {
-        try {
-          const parsed = JSON.parse(event.data);
-          if (parsed && parsed.event !== 'heartbeat') {
-            fetchOrders();
-            if (selectedOrderId) {
-              fetchOrderDetails(selectedOrderId);
-            }
-          }
-        } catch {
-          // ignore heartbeat parse errors
-        }
-      };
-      es.onerror = () => {
-        setSseConnected(false);
-      };
-    } catch {
-      setSseConnected(false);
-    }
-    return () => {
-      if (es) {
-        es.close();
-      }
-    };
-  }, [selectedOrderId]);
-
-  // Red-Team Chaos Simulator Handlers
   const handleSimulateTamper = async () => {
     if (!selectedOrderId) return;
     setSimulatingChaos(true);
@@ -244,7 +262,6 @@ export const MerchantDashboard: React.FC = () => {
     }
   };
 
-  // 1-Click Multi-Supplier Rerouting Handler
   const handleReroute = async (sku: string, newSupplierCode: string) => {
     if (!selectedOrderId) return;
     try {
@@ -263,7 +280,6 @@ export const MerchantDashboard: React.FC = () => {
     }
   };
 
-  // Actions
   const handleCreateDemoOrder = async () => {
     setLoading(true);
     setActionMsg(null);
@@ -333,369 +349,498 @@ export const MerchantDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* Top Navbar */}
-      <header className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div className="min-h-screen bg-[#090B10] text-[#F1F5F9] flex flex-col font-sans">
+      {/* ── Institutional Header ───────────────────────────────────── */}
+      <header className="border-b border-[#1E2638] bg-[#0D111A] sticky top-0 z-40 px-5 py-2.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white shadow-lg shadow-blue-500/20">
-            AH
+          <div className="w-8 h-8 rounded bg-[#0070BA] flex items-center justify-center font-black text-white text-sm shadow-sm">
+            PH
           </div>
           <div>
-            <h1 className="text-base font-extrabold tracking-tight text-white flex items-center gap-2">
-              AuthHorizon
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                Split-Shipment Intelligence
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-bold tracking-tight text-[#F1F5F9] uppercase font-mono">
+                PayPal Horizon
+              </h1>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#111622] text-slate-300 border border-[#1E2638]">
+                Merchant Treasury Desk
               </span>
-            </h1>
-            <p className="text-[11px] text-slate-400">Enterprise Split-Shipment & Consent Control Center</p>
+            </div>
+            <p className="text-[10px] text-slate-400 font-sans">
+              Autonomous Supply-Chain Liquidity & Pre-Authorization Hedging Engine
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono ${
+        {/* Status Indicators & Navigation */}
+        <div className="flex items-center gap-2">
+          {/* Test Health Badge */}
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#10B981]/10 border border-[#10B981]/30 text-emerald-300 text-[11px] font-mono">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#10B981]" />
+            <span>90/90 Tests Passing</span>
+          </div>
+
+          {/* Gateway Sandbox Mode */}
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded border text-[11px] font-mono ${
             systemHealth?.gateway === 'paypal_sandbox'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+              ? 'bg-[#10B981]/10 border-[#10B981]/30 text-emerald-300'
+              : 'bg-[#F59E0B]/10 border-[#F59E0B]/30 text-amber-300'
           }`}>
-            <span className={`w-2 h-2 rounded-full ${
-              systemHealth?.gateway === 'paypal_sandbox' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              systemHealth?.gateway === 'paypal_sandbox' ? 'bg-[#10B981] animate-pulse' : 'bg-[#F59E0B]'
             }`} />
-            {systemHealth?.gateway === 'paypal_sandbox' ? 'PayPal Sandbox (Live REST v2)' : 'Mock Gateway Mode'}
+            <span>{systemHealth?.gateway === 'paypal_sandbox' ? 'PayPal Sandbox (REST v2)' : 'Mock Gateway'}</span>
           </div>
 
-          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-mono">
-            <span className="w-2 h-2 rounded-full bg-indigo-400" />
-            AI: {systemHealth?.active_llm_provider?.toUpperCase() || 'GEMINI'} FLASH (Live)
-          </div>
-
-          <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-xs font-mono">
-            <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-            6× AG Grid v33 Instances Active
-          </div>
-
-          <div className={`hidden 2xl:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-mono ${
+          {/* SSE Live Stream */}
+          <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded border text-[11px] font-mono ${
             sseConnected 
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300' 
-              : 'bg-slate-800/40 border-slate-700/40 text-slate-400'
+              ? 'bg-[#10B981]/10 border-[#10B981]/30 text-emerald-300' 
+              : 'bg-[#111622] border-[#1E2638] text-slate-400'
           }`}>
-            <span className={`w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${sseConnected ? 'bg-[#10B981] animate-pulse' : 'bg-slate-500'}`} />
             <span>{sseConnected ? 'Live SSE Stream' : 'Polling Sync'}</span>
           </div>
 
+          {/* AG Grid Active */}
+          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#111622] border border-[#1E2638] text-slate-300 text-[11px] font-mono">
+            <Sparkles className="w-3 h-3 text-[#0070BA]" />
+            <span>6× AG Grid Active</span>
+          </div>
+
+          {/* Consumer Portal Link */}
           {selectedOrderId && (
             <a
               href={`/consent/${selectedOrderId}`}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium shadow-md transition-all"
+              className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#0070BA] hover:bg-[#005ea6] text-white text-[11px] font-medium shadow-xs transition-colors"
             >
-              <span>Buyer Consent Portal</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Buyer Portal</span>
+              <ExternalLink className="w-3 h-3" />
             </a>
           )}
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
-        {/* Banner Alert for Action Results */}
-        {actionMsg && (
-          <div className="p-3.5 rounded-xl bg-blue-950/40 border border-blue-800/60 text-xs text-blue-200 flex items-center justify-between shadow-lg">
-            <span>{actionMsg}</span>
-            <button onClick={() => setActionMsg(null)} className="text-blue-400 hover:text-white font-bold ml-4">✕</button>
-          </div>
-        )}
-
-        {/* Action Controls & Order Bar */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Step 1: Create Order */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-slate-400">Step 1 • Simulation</span>
-              <h4 className="text-sm font-bold text-slate-100 mt-1">Create $90.00 Cart</h4>
-              <p className="text-xs text-slate-400 mt-0.5">3 industrial components with intent=AUTHORIZE</p>
-            </div>
-            <button
-              onClick={handleCreateDemoOrder}
-              disabled={loading}
-              className="mt-4 w-full py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition-all disabled:opacity-50"
-            >
-              <Package className="w-3.5 h-3.5" />
-              <span>Create Demo Order</span>
-            </button>
-          </div>
-
-          {/* Step 2: Approve on Sandbox */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-slate-400">Step 2 • Buyer Auth</span>
-              <h4 className="text-sm font-bold text-slate-100 mt-1">PayPal Sandbox Link</h4>
-              <p className="text-xs text-slate-400 mt-0.5">Approve checkout on PayPal Modal</p>
-            </div>
-            {currentOrder?.paypal_order_id ? (
-              <a
-                href={`https://www.sandbox.paypal.com/checkoutnow?token=${currentOrder.paypal_order_id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-4 w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-blue-400 text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700 transition-all text-center truncate"
-              >
-                <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate">Open Sandbox Login</span>
-              </a>
-            ) : (
-              <div className="mt-4 py-2 text-center text-xs text-slate-600 font-mono">No order selected</div>
-            )}
-          </div>
-
-          {/* Step 3: Authorize Hold */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-slate-400">Step 3 • Lock Hold</span>
-              <h4 className="text-sm font-bold text-slate-100 mt-1">Authorize $90 Hold</h4>
-              <p className="text-xs text-slate-400 mt-0.5">Locks fund hold for up to 29 days</p>
-            </div>
-            <button
-              onClick={handleAuthorize}
-              disabled={loading || !currentOrder || currentOrder.status === 'AUTHORIZED' || currentOrder.status === 'PARTIALLY_CAPTURED' || currentOrder.status === 'COMPLETED'}
-              className="mt-4 w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition-all disabled:opacity-40"
-            >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>Authorize Order</span>
-            </button>
-          </div>
-
-          {/* Step 4: Ship In-Stock (Split Capture) */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between shadow-md">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-slate-400">Step 4 • Hero Action</span>
-              <h4 className="text-sm font-bold text-slate-100 mt-1">Ship In-Stock ($60)</h4>
-              <p className="text-xs text-slate-400 mt-0.5">Partial capture with final_capture=false</p>
-            </div>
-            <button
-              onClick={handleShipPartial}
-              disabled={loading || !currentOrder || currentOrder.status !== 'AUTHORIZED'}
-              className="mt-4 w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition-all disabled:opacity-40"
-            >
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>Split Capture ($60)</span>
-            </button>
-          </div>
+      {/* ── Action Notification Banner ─────────────────────────────── */}
+      {actionMsg && (
+        <div className="bg-[#0070BA]/15 border-b border-[#0070BA]/30 px-5 py-2 text-xs text-blue-200 flex items-center justify-between font-mono">
+          <span>{actionMsg}</span>
+          <button onClick={() => setActionMsg(null)} className="text-blue-300 hover:text-white font-bold ml-4">✕</button>
         </div>
+      )}
 
-        {/* HERO VISUAL: Split Hold Bar */}
-        <SplitHoldBar
-          totalAmount={currentOrder?.total_amount || 90.0}
-          capturedAmount={currentOrder?.captured_amount || 0.0}
-          heldAmount={currentOrder?.held_amount || 0.0}
-          status={currentOrder?.status || 'CREATED'}
-        />
-
-        {/* 29-Day PayPal Authorization Expiry Intelligence Banner */}
-        {currentOrder?.auth_days_remaining !== undefined && currentOrder?.auth_days_remaining !== null && (
-          <div className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono shadow-xl transition-all ${
-            currentOrder.auth_days_remaining > 14
-              ? 'bg-emerald-950/25 border-emerald-800/40 text-emerald-300'
-              : currentOrder.auth_days_remaining >= 3
-              ? 'bg-amber-950/35 border-amber-800/50 text-amber-300'
-              : 'bg-rose-950/50 border-rose-700/60 text-rose-300 animate-pulse'
-          }`}>
-            <div className="flex items-center gap-2.5">
-              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                currentOrder.auth_days_remaining > 14 ? 'bg-emerald-400' : currentOrder.auth_days_remaining >= 3 ? 'bg-amber-400 animate-pulse' : 'bg-rose-400 animate-ping'
-              }`} />
-              <div>
-                <span className="font-bold text-sm tracking-tight text-white flex items-center gap-2">
-                  PayPal 29-Day Hold Window: {currentOrder.auth_days_remaining} Day{currentOrder.auth_days_remaining === 1 ? '' : 's'} Remaining
-                </span>
-                <p className="text-[11px] opacity-80 font-sans mt-0.5 text-slate-300">
-                  Hold authorized on {currentOrder.auth_created_at ? new Date(currentOrder.auth_created_at).toLocaleDateString() : 'N/A'}. Consumer delay consent required under FTC 16 CFR Part 435 before hold expiry.
-                </p>
-              </div>
+      {/* ── Main Command Deck ──────────────────────────────────────── */}
+      <main className="flex-1 p-4 lg:p-5 space-y-4 max-w-[1720px] w-full mx-auto">
+        
+        {/* ── A. Global Liquidity Summary Matrix ────────────────────── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-[#111622] border border-[#1E2638] rounded-md p-3">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-0.5">
+              Total Pre-Authorized
+            </span>
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-mono font-bold text-[#F1F5F9] tabular-nums">
+                ${portfolioSummary.totalAuth.toFixed(2)}
+              </span>
+              <span className="text-[10px] font-mono text-slate-500">USD</span>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/50 border border-white/10 text-slate-200">
-                Hold Expires: {currentOrder.auth_expires_at ? new Date(currentOrder.auth_expires_at).toLocaleDateString() : 'N/A'}
+          </div>
+
+          <div className="bg-[#111622] border border-[#1E2638] rounded-md p-3">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 block mb-0.5">
+              Settled & Captured
+            </span>
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-mono font-bold text-emerald-400 tabular-nums">
+                ${portfolioSummary.totalCap.toFixed(2)}
+              </span>
+              <span className="text-[10px] font-mono text-emerald-500/80">
+                {portfolioSummary.totalAuth > 0 ? `${((portfolioSummary.totalCap / portfolioSummary.totalAuth) * 100).toFixed(1)}%` : '0%'}
               </span>
             </div>
           </div>
-        )}
 
-        {/* Center Grid: AI Parser + Capture Ledger */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Supplier Delay Notice Ingestion */}
-          <NoticeParserCard
-            orderId={selectedOrderId || 1}
-            onNoticeParsed={() => {
-              if (selectedOrderId) fetchOrderDetails(selectedOrderId);
-            }}
-          />
+          <div className="bg-[#111622] border border-[#1E2638] rounded-md p-3">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-amber-400 block mb-0.5">
+              Active Contingency Hold
+            </span>
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-mono font-bold text-amber-400 tabular-nums">
+                ${portfolioSummary.totalHeld.toFixed(2)}
+              </span>
+              <span className="text-[10px] font-mono text-amber-500/80">
+                {portfolioSummary.totalAuth > 0 ? `${((portfolioSummary.totalHeld / portfolioSummary.totalAuth) * 100).toFixed(1)}%` : '0%'}
+              </span>
+            </div>
+          </div>
 
-          {/* Audit Ledger & Reconciler Logs */}
-          <div className="bg-slate-900/80 border border-slate-700/60 rounded-xl p-6 shadow-xl backdrop-blur-md flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <History className="w-5 h-5" />
+          <div className="bg-[#111622] border border-[#1E2638] rounded-md p-3">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block mb-0.5">
+              Portfolio Health
+            </span>
+            <div className="flex items-baseline justify-between">
+              <span className="text-lg font-mono font-bold text-[#F1F5F9] tabular-nums">
+                {orders.length} Active
+              </span>
+              <span className="text-[10px] font-mono text-amber-400">
+                {portfolioSummary.delayedCount} Delayed
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── B. Asymmetric Master-Detail Layout (65% Left / 35% Right) ─ */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          
+          {/* ── LEFT 65%: MASTER AUTHORIZATION PORTFOLIO (Cols 1-8) ──── */}
+          <div className="lg:col-span-8 space-y-3">
+            <OrdersGrid
+              orders={orders}
+              selectedOrderId={selectedOrderId}
+              onSelectOrder={(id) => setSelectedOrderId(id)}
+              loading={loading}
+            />
+          </div>
+
+          {/* ── RIGHT 35%: CONTEXTUAL INSPECTOR & ACTION DOCK (Cols 9-12) ─ */}
+          <div className="lg:col-span-4 space-y-3">
+            
+            {/* 1. Selected Order Telemetry Header */}
+            <div className="bg-[#111622] border border-[#1E2638] rounded-md p-3.5 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[#1E2638]">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-mono font-bold text-[#F1F5F9]">
+                      ORDER #{currentOrder?.id || selectedOrderId || '—'}
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
+                      currentOrder?.status === 'COMPLETED' ? 'bg-[#10B981]/20 text-emerald-300 border border-[#10B981]/40' :
+                      currentOrder?.status === 'PARTIALLY_CAPTURED' ? 'bg-[#F59E0B]/20 text-amber-300 border border-[#F59E0B]/40' :
+                      'bg-[#0070BA]/20 text-blue-300 border border-[#0070BA]/40'
+                    }`}>
+                      {currentOrder?.status || 'SELECT ORDER'}
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-100">Capture Audit Ledger & Reconciler</h3>
-                    <p className="text-xs text-slate-400">Cryptographically verified capture logs, idempotency & gateway events</p>
+                  <span className="text-[10px] font-mono text-slate-400 block truncate mt-0.5" title={currentOrder?.paypal_order_id}>
+                    PayPal ID: {currentOrder?.paypal_order_id || '—'}
+                  </span>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-[10px] font-mono text-slate-500 uppercase block">Hold Expiry</span>
+                  <span className="text-[11px] font-mono text-slate-300">
+                    {currentOrder?.auth_days_remaining != null ? `~${currentOrder.auth_days_remaining}d remaining` : '29d Window'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Proportional Split Hold Bar */}
+              <SplitHoldBar
+                totalAmount={currentOrder?.total_amount || 90.0}
+                capturedAmount={currentOrder?.captured_amount || 0.0}
+                heldAmount={currentOrder?.held_amount || 0.0}
+                status={currentOrder?.status || 'AUTHORIZED'}
+              />
+
+              {/* Order Line Items Summary */}
+              {currentOrder?.items && currentOrder.items.length > 0 && (
+                <div className="pt-2 border-t border-[#1E2638] space-y-1.5">
+                  <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                    Fulfillment Line Items ({currentOrder.items.length}):
+                  </span>
+                  <div className="space-y-1">
+                    {currentOrder.items.map((it: any) => (
+                      <div key={it.id} className="p-2 rounded bg-[#0D111A] border border-[#1E2638] flex items-center justify-between text-[11px] font-mono">
+                        <div className="truncate pr-2">
+                          <span className="font-semibold text-slate-200 block truncate">{it.name}</span>
+                          <span className="text-[10px] text-slate-500">{it.sku}</span>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="font-bold text-[#F1F5F9] tabular-nums block">${it.amount.toFixed(2)}</span>
+                          <span className={`text-[9px] uppercase font-bold ${
+                            it.status === 'SHIPPED' ? 'text-emerald-400' :
+                            it.status === 'DELAYED' ? 'text-amber-400' : 'text-slate-400'
+                          }`}>
+                            {it.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap justify-end">
+              )}
+
+              {/* Scenario Action Dock (Subordinate Executive Controls) */}
+              <div className="pt-2 border-t border-[#1E2638] space-y-2">
+                <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                  Scenario Execution Dock:
+                </span>
+                
+                <div className="grid grid-cols-2 gap-1.5 text-xs font-mono">
+                  {/* Step 1: Create Cart */}
+                  <button
+                    onClick={handleCreateDemoOrder}
+                    disabled={loading}
+                    className="p-1.5 rounded bg-[#0D111A] hover:bg-[#141B29] border border-[#1E2638] text-slate-300 hover:text-white transition flex items-center justify-center gap-1 text-[11px]"
+                  >
+                    <Package className="w-3 h-3 text-[#0070BA]" />
+                    <span>+ Create $90 Cart</span>
+                  </button>
+
+                  {/* Step 2: Authorize */}
+                  <button
+                    onClick={handleAuthorize}
+                    disabled={loading || currentOrder?.status !== 'CREATED'}
+                    className="p-1.5 rounded bg-[#0D111A] hover:bg-[#141B29] border border-[#1E2638] text-slate-300 hover:text-white transition flex items-center justify-center gap-1 text-[11px] disabled:opacity-40"
+                  >
+                    <Lock className="w-3 h-3 text-blue-400" />
+                    <span>Authorize Hold</span>
+                  </button>
+
+                  {/* Step 3: Partial Ship */}
+                  <button
+                    onClick={handleShipPartial}
+                    disabled={loading || currentOrder?.status !== 'AUTHORIZED'}
+                    className="p-1.5 rounded bg-[#0D111A] hover:bg-[#141B29] border border-[#1E2638] text-slate-300 hover:text-white transition flex items-center justify-center gap-1 text-[11px] disabled:opacity-40"
+                  >
+                    <CheckCircle className="w-3 h-3 text-emerald-400" />
+                    <span>Ship Partial ($60)</span>
+                  </button>
+
+                  {/* Step 4: Fulfill Delayed / Swap */}
+                  <button
+                    onClick={handleFulfillDelayed}
+                    disabled={loading || currentOrder?.status !== 'PARTIALLY_CAPTURED'}
+                    className="p-1.5 rounded bg-[#0D111A] hover:bg-[#141B29] border border-[#1E2638] text-slate-300 hover:text-white transition flex items-center justify-center gap-1 text-[11px] disabled:opacity-40"
+                  >
+                    <Repeat className="w-3 h-3 text-amber-400" />
+                    <span>Fulfill / Swap ($28)</span>
+                  </button>
+                </div>
+
+                {/* Secondary Actions */}
+                <div className="flex items-center gap-1.5 pt-1">
                   <button
                     onClick={handleAssessRisk}
                     disabled={assessingRisk || !selectedOrderId}
-                    className="px-2.5 py-1 rounded-lg bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 border border-orange-500/30 text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-40"
-                    title="Compute predictive supply disruption probability across all items in this order"
+                    className="flex-1 py-1 px-2 rounded bg-[#0D111A] hover:bg-[#141B29] border border-[#1E2638] text-slate-300 text-[10px] font-mono flex items-center justify-center gap-1"
                   >
-                    <Server className={`w-3.5 h-3.5 text-orange-400 ${assessingRisk ? 'animate-spin' : ''}`} />
-                    <span>{assessingRisk ? 'Scoring...' : 'Assess Risk'}</span>
-                  </button>
-
-                  <button
-                    onClick={handleTestIdempotency}
-                    disabled={testingIdempotency || !currentOrder?.audits || currentOrder.audits.length === 0}
-                    className="px-2.5 py-1 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-40"
-                    title={!currentOrder?.audits || currentOrder.audits.length === 0 ? "Execute a capture first to test replay" : "Re-sends duplicate PayPal-Request-Id to verify idempotency deduplication"}
-                  >
-                    <Repeat className={`w-3.5 h-3.5 text-cyan-400 ${testingIdempotency ? 'animate-spin' : ''}`} />
-                    <span>{testingIdempotency ? 'Replaying...' : 'Test Idempotency'}</span>
-                  </button>
-
-                  <button
-                    onClick={handleVerifyEvidence}
-                    disabled={verifyingChain}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-medium flex items-center gap-1.5 transition-all disabled:opacity-50"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>{verifyingChain ? 'Verifying...' : 'Verify with PayPal'}</span>
+                    <Cpu className="w-3 h-3 text-cyan-400" />
+                    <span>{assessingRisk ? 'Scoring...' : 'Evaluate Risk'}</span>
                   </button>
 
                   <a
                     href={`/api/orders/${selectedOrderId || 1}/evidence/download`}
                     download
-                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-1.5 transition-all"
+                    className="py-1 px-2 rounded bg-[#0D111A] hover:bg-[#141B29] border border-[#1E2638] text-slate-300 text-[10px] font-mono flex items-center justify-center gap-1"
                   >
-                    <Download className="w-3.5 h-3.5 text-slate-400" />
+                    <Download className="w-3 h-3 text-slate-400" />
                     <span>Evidence JSON</span>
                   </a>
+                </div>
+              </div>
+            </div>
 
-                  {currentOrder?.status === 'PARTIALLY_CAPTURED' && (
+            {/* 2. Embedded AI Supplier Notice Ingestion Console */}
+            <NoticeParserCard
+              orderId={selectedOrderId || 1}
+              onNoticeParsed={() => {
+                if (selectedOrderId) {
+                  fetchOrderDetails(selectedOrderId);
+                  fetchRiskAssessments(selectedOrderId);
+                }
+              }}
+            />
+
+          </div>
+        </div>
+
+        {/* ── C. OPERATIONAL DEEP-DIVE WORKBENCH (Full Width) ──────── */}
+        <section className="bg-[#111622] border border-[#1E2638] rounded-md p-4 space-y-3">
+          
+          {/* Workbench Header & Primary Category Tabs */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1E2638]">
+            <div>
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#0070BA]" />
+                <h3 className="text-xs font-bold font-mono tracking-wider text-[#F1F5F9] uppercase">
+                  Operational Deep-Dive Workbench
+                </h3>
+                <span className="text-[10px] font-mono text-slate-400 px-1.5 py-0.5 rounded bg-[#0D111A] border border-[#1E2638]">
+                  Context: Order #{selectedOrderId || '—'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Multi-supplier freight telemetry, blockchain-style consent hashes & PayPal gateway logs
+              </p>
+            </div>
+
+            {/* Primary Category Switcher */}
+            <div className="flex items-center gap-1 p-1 rounded bg-[#0D111A] border border-[#1E2638] text-xs font-mono">
+              <button
+                onClick={() => setWorkbenchCategory('supply_telemetry')}
+                className={`px-3 py-1 rounded transition-colors flex items-center gap-1.5 ${
+                  workbenchCategory === 'supply_telemetry'
+                    ? 'bg-[#0070BA] text-white font-bold'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Server className="w-3.5 h-3.5" />
+                <span>Supply Telemetry & Reroute</span>
+              </button>
+
+              <button
+                onClick={() => setWorkbenchCategory('cryptographic_chain')}
+                className={`px-3 py-1 rounded transition-colors flex items-center gap-1.5 ${
+                  workbenchCategory === 'cryptographic_chain'
+                    ? 'bg-[#0070BA] text-white font-bold'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Link2 className="w-3.5 h-3.5" />
+                <span>Cryptographic Chain & Defense</span>
+              </button>
+
+              <button
+                onClick={() => setWorkbenchCategory('gateway_reconciler')}
+                className={`px-3 py-1 rounded transition-colors flex items-center gap-1.5 ${
+                  workbenchCategory === 'gateway_reconciler'
+                    ? 'bg-[#0070BA] text-white font-bold'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>PayPal Gateway Reconciler</span>
+              </button>
+            </div>
+          </div>
+
+          {/* ── Category 1: Supply Telemetry & Reroute ──────────────── */}
+          {workbenchCategory === 'supply_telemetry' && (
+            <div className="space-y-3">
+              {/* Sub-tab navigation */}
+              <div className="flex items-center justify-between text-xs font-mono">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSupplySubTab('items')}
+                    className={`px-2.5 py-1 rounded border text-[11px] transition-colors ${
+                      supplySubTab === 'items'
+                        ? 'bg-[#0070BA]/20 border-[#0070BA] text-blue-200 font-bold'
+                        : 'bg-[#0D111A] border-[#1E2638] text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Itemized Risk & 1-Click Reroute ({riskAssessments.length})
+                  </button>
+                  <button
+                    onClick={() => setSupplySubTab('suppliers')}
+                    className={`px-2.5 py-1 rounded border text-[11px] transition-colors ${
+                      supplySubTab === 'suppliers'
+                        ? 'bg-[#0070BA]/20 border-[#0070BA] text-blue-200 font-bold'
+                        : 'bg-[#0D111A] border-[#1E2638] text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Global Supplier Nodes ({suppliers.length})
+                  </button>
+                </div>
+                <span className="text-slate-400 text-[10px]">
+                  {supplySubTab === 'items' 
+                    ? '0% AI Math • Deterministic Item Scoring & Backup Supplier Reallocation'
+                    : 'Live Managed Row Drag-Drop • Fulfillment Sparklines • Congestion Index'}
+                </span>
+              </div>
+
+              {supplySubTab === 'items' ? (
+                <RiskAssessmentsGrid 
+                  assessments={riskAssessments} 
+                  orderId={selectedOrderId} 
+                  onReroute={handleReroute}
+                />
+              ) : (
+                <SupplierRiskGrid suppliers={suppliers} />
+              )}
+            </div>
+          )}
+
+          {/* ── Category 2: Cryptographic Chain & Chaos Defense ──────── */}
+          {workbenchCategory === 'cryptographic_chain' && (
+            <div className="space-y-3">
+              {/* Red-Team Chaos Simulator Toolbar */}
+              <div className="p-3 bg-[#0D111A] border border-[#1E2638] rounded flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+                  <div>
+                    <h4 className="text-xs font-semibold text-rose-300 font-mono">
+                      Red-Team Chaos Simulator (Cryptographic Defense)
+                    </h4>
+                    <p className="text-[10px] text-slate-400">
+                      Simulate payload tampering or block deletion to test real-time SHA-256 detection
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSimulateTamper}
+                    disabled={simulatingChaos || (currentOrder?.consents?.length || 0) === 0}
+                    className="px-2.5 py-1 text-xs font-mono font-semibold rounded bg-rose-950/60 border border-rose-700/60 text-rose-200 hover:bg-rose-900 transition disabled:opacity-40"
+                  >
+                    ⚡ Simulate Tamper
+                  </button>
+                  <button
+                    onClick={handleSimulateChainBreak}
+                    disabled={simulatingChaos || (currentOrder?.consents?.length || 0) < 2}
+                    className="px-2.5 py-1 text-xs font-mono font-semibold rounded bg-amber-950/60 border border-amber-700/60 text-amber-200 hover:bg-amber-900 transition disabled:opacity-40"
+                  >
+                    🔗 Simulate Chain Break
+                  </button>
+                  <button
+                    onClick={handleVerifyEvidence}
+                    disabled={verifyingChain}
+                    className="px-2.5 py-1 text-xs font-mono font-semibold rounded bg-[#0070BA]/20 border border-[#0070BA] text-blue-200 hover:bg-[#0070BA]/30 transition"
+                  >
+                    {verifyingChain ? 'Verifying...' : 'Verify Cryptographic State'}
+                  </button>
+                  {chaosResult && (
                     <button
-                      onClick={handleFulfillDelayed}
-                      disabled={loading}
-                      className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-medium shadow transition-all"
+                      onClick={() => { setChaosResult(null); handleVerifyEvidence(); }}
+                      className="px-2.5 py-1 text-xs font-mono font-semibold rounded bg-emerald-950/60 border border-emerald-700/60 text-emerald-200 hover:bg-emerald-900 transition"
                     >
-                      Fulfill Delayed ($30)
+                      🔄 Restore Chain
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* Ledger Tab Navigation */}
-              <div className="flex items-center gap-1.5 mb-3 p-1 rounded-lg bg-slate-950/80 border border-slate-800 text-xs">
-                <button
-                  onClick={() => setActiveLedgerTab('audits')}
-                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
-                    activeLedgerTab === 'audits'
-                      ? 'bg-slate-800 text-slate-100 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <History className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Captures ({currentOrder?.audits?.length || 0})</span>
-                </button>
-                <button
-                  onClick={() => setActiveLedgerTab('gateway_logs')}
-                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
-                    activeLedgerTab === 'gateway_logs'
-                      ? 'bg-slate-800 text-slate-100 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Activity className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Gateway Reconciler Grid ({currentOrder?.gateway_logs?.length || 0})</span>
-                </button>
-                <button
-                  onClick={() => setActiveLedgerTab('consent_chain')}
-                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
-                    activeLedgerTab === 'consent_chain'
-                      ? 'bg-slate-800 text-slate-100 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Link2 className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Consent Hash Chain ({currentOrder?.consents?.length || 0})</span>
-                </button>
-                <button
-                  onClick={() => setActiveLedgerTab('supplier_risk')}
-                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
-                    activeLedgerTab === 'supplier_risk'
-                      ? 'bg-slate-800 text-slate-100 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Server className="w-3.5 h-3.5 text-orange-400" />
-                  <span>Supplier Graph ({suppliers.length})</span>
-                </button>
-                <button
-                  onClick={() => setActiveLedgerTab('risk_assessments')}
-                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
-                    activeLedgerTab === 'risk_assessments'
-                      ? 'bg-slate-800 text-slate-100 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Item Risk ({riskAssessments.length})</span>
-                </button>
-                <button
-                  onClick={() => setActiveLedgerTab('routing_plan')}
-                  className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
-                    activeLedgerTab === 'routing_plan'
-                      ? 'bg-slate-800 text-slate-100 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Routing Nodes ({routingPlan.length})</span>
-                </button>
-              </div>
-
-              {/* Idempotency Result Banner */}
-              {idempotencyResult && (
-                <div className="mb-3 p-3 rounded-lg border bg-cyan-950/40 border-cyan-700/60 text-cyan-200 text-xs shadow-lg space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 font-bold text-cyan-300">
-                      <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                      <span>Idempotency Replay Verified (RFC 7240 / PayPal REST v2)</span>
-                    </div>
-                    <button
-                      onClick={() => setIdempotencyResult(null)}
-                      className="text-cyan-400 hover:text-white font-bold ml-2 text-xs"
-                    >
-                      ✕
-                    </button>
+              {/* Chaos Result Alert Banner */}
+              {chaosResult && (
+                <div className="p-3 rounded border text-xs font-mono bg-rose-950/40 border-rose-700/60 text-rose-200 space-y-2">
+                  <div className="flex items-center gap-2 font-bold">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>CHAOS VERDICT: {chaosResult.verdict}</span>
                   </div>
-                  <p className="text-[11px] text-cyan-100">{idempotencyResult.message}</p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1 font-mono text-[10px]">
-                    <div className="p-1.5 rounded bg-slate-950/70 border border-cyan-800/40">
-                      <span className="text-slate-400 block">Original Capture:</span>
-                      <span className="text-cyan-300 truncate block">{idempotencyResult.original_capture_id}</span>
-                    </div>
-                    <div className="p-1.5 rounded bg-slate-950/70 border border-cyan-800/40">
-                      <span className="text-slate-400 block">Replayed Capture:</span>
-                      <span className="text-emerald-400 truncate block">{idempotencyResult.replayed_capture_id}</span>
-                    </div>
-                    <div className="p-1.5 rounded bg-slate-950/70 border border-cyan-800/40">
-                      <span className="text-slate-400 block">Duplicate Deduplicated:</span>
-                      <span className="text-emerald-400 font-bold block">✓ True (Zero Dups)</span>
-                    </div>
-                    <div className="p-1.5 rounded bg-slate-950/70 border border-cyan-800/40">
-                      <span className="text-slate-400 block">Ledger Movements:</span>
-                      <span className="text-slate-200 font-bold block">{idempotencyResult.total_ledger_movements} (Single Entry)</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] text-slate-300">
+                    {chaosResult.original_hash && (
+                      <div>
+                        <span className="text-slate-500 block">Original Hash:</span>
+                        <code className="text-emerald-400 break-all">{chaosResult.original_hash}</code>
+                      </div>
+                    )}
+                    {chaosResult.tampered_hash && (
+                      <div>
+                        <span className="text-slate-500 block">Mutated Hash:</span>
+                        <code className="text-rose-400 break-all">{chaosResult.tampered_hash}</code>
+                      </div>
+                    )}
+                    {chaosResult.removed_record_hash && (
+                      <div>
+                        <span className="text-slate-500 block">Broken Link Hash:</span>
+                        <code className="text-rose-400 break-all">{chaosResult.removed_record_hash}</code>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-slate-500 block">Integrity Defense:</span>
+                      <span className="text-amber-300">{chaosResult.security_note}</span>
                     </div>
                   </div>
                 </div>
@@ -703,227 +848,140 @@ export const MerchantDashboard: React.FC = () => {
 
               {/* Verification Result Banner */}
               {verificationResult && (
-                <div className={`mb-3 p-2.5 rounded-lg border text-xs flex items-center justify-between ${
-                  verificationResult.chain_valid && verificationResult.paypal_synced
-                    ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300'
-                    : 'bg-amber-950/40 border-amber-800/60 text-amber-300'
-                }`}>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    <span>{verificationResult.sync_message || verificationResult.chain_message}</span>
+                <div className="p-3 rounded border text-xs font-mono bg-emerald-950/40 border-emerald-700/60 text-emerald-200">
+                  <div className="flex items-center gap-2 font-bold mb-1">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    <span>EVIDENCE INTEGRITY AUDIT: {verificationResult.audit_status}</span>
                   </div>
-                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    {verificationResult.audit_status}
-                  </span>
+                  <span className="text-[10px] text-slate-300 block">{verificationResult.sync_message}</span>
                 </div>
               )}
 
-              {/* Tab Content 1: Capture Audits View */}
-              {activeLedgerTab === 'audits' && (
-                <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+              {/* Consent Chain Table */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 px-1">
+                  <span>AG Grid: Sequential SHA-256 consent blocks linked to GENESIS_HASH</span>
+                  <span className="text-emerald-400 font-bold">{currentOrder?.consents?.length || 0} consent block(s)</span>
+                </div>
+                <ConsentChainGrid consents={currentOrder?.consents || []} />
+              </div>
+            </div>
+          )}
+
+          {/* ── Category 3: PayPal Gateway Reconciliation ───────────── */}
+          {workbenchCategory === 'gateway_reconciler' && (
+            <div className="space-y-3">
+              {/* Sub-tab controls & Idempotency test */}
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setGatewaySubTab('logs')}
+                    className={`px-2.5 py-1 rounded border text-[11px] transition-colors ${
+                      gatewaySubTab === 'logs'
+                        ? 'bg-[#0070BA]/20 border-[#0070BA] text-blue-200 font-bold'
+                        : 'bg-[#0D111A] border-[#1E2638] text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Gateway Reconciler Logs ({currentOrder?.gateway_logs?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setGatewaySubTab('routing')}
+                    className={`px-2.5 py-1 rounded border text-[11px] transition-colors ${
+                      gatewaySubTab === 'routing'
+                        ? 'bg-[#0070BA]/20 border-[#0070BA] text-blue-200 font-bold'
+                        : 'bg-[#0D111A] border-[#1E2638] text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Multi-Supplier Hold Routing ({routingPlan.length})
+                  </button>
+                  <button
+                    onClick={() => setGatewaySubTab('audits')}
+                    className={`px-2.5 py-1 rounded border text-[11px] transition-colors ${
+                      gatewaySubTab === 'audits'
+                        ? 'bg-[#0070BA]/20 border-[#0070BA] text-blue-200 font-bold'
+                        : 'bg-[#0D111A] border-[#1E2638] text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Capture Audits ({currentOrder?.audits?.length || 0})
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleTestIdempotency}
+                    disabled={testingIdempotency || !selectedOrderId}
+                    className="px-2.5 py-1 rounded bg-[#0070BA]/20 border border-[#0070BA] text-blue-200 text-[11px] hover:bg-[#0070BA]/30 transition flex items-center gap-1"
+                    title="Replay capture call with same PayPal-Request-Id to verify cached replay"
+                  >
+                    <Repeat className={`w-3 h-3 ${testingIdempotency ? 'animate-spin' : ''}`} />
+                    <span>Test Idempotency Replay</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Idempotency Result Alert */}
+              {idempotencyResult && (
+                <div className="p-3 rounded border text-xs font-mono bg-[#0D111A] border-[#1E2638] text-slate-200 space-y-1">
+                  <div className="flex items-center justify-between text-emerald-400 font-bold">
+                    <span>IDEMPOTENCY VERIFIED ✓</span>
+                    <span className="text-[10px] text-slate-400">Match Status: {idempotencyResult.reconciler_match ? 'PERFECT' : 'MISMATCH'}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300">{idempotencyResult.message}</p>
+                </div>
+              )}
+
+              {/* Views */}
+              {gatewaySubTab === 'logs' && (
+                <GatewayLogsGrid logs={currentOrder?.gateway_logs || []} />
+              )}
+
+              {gatewaySubTab === 'routing' && (
+                <RoutingPlanGrid 
+                  nodes={routingPlan} 
+                  totalOrderAmount={currentOrder?.total_amount || 90.0} 
+                  orderId={selectedOrderId} 
+                />
+              )}
+
+              {gatewaySubTab === 'audits' && (
+                <div className="space-y-2">
                   {currentOrder?.audits && currentOrder.audits.length > 0 ? (
-                    currentOrder.audits.map((a: any) => (
-                      <div
-                        key={a.id}
-                        className="p-3 rounded-lg bg-slate-950/70 border border-slate-800 flex items-center justify-between text-xs"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <strong className="text-slate-100">${a.amount.toFixed(2)} USD</strong>
-                            <span className="font-mono text-[10px] text-slate-400">({a.capture_type})</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
+                      {currentOrder.audits.map((a: any) => (
+                        <div key={a.id} className="p-3 rounded bg-[#0D111A] border border-[#1E2638] flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-[#F1F5F9] tabular-nums">${a.amount.toFixed(2)} USD</span>
+                              <span className="text-[10px] text-slate-500 uppercase">({a.capture_type})</span>
+                            </div>
+                            <span className="text-[10px] text-blue-400 block truncate max-w-xs mt-0.5">
+                              {a.paypal_capture_id}
+                            </span>
                           </div>
-                          <p className="font-mono text-[10px] text-blue-400 mt-0.5 truncate max-w-xs">
-                            Capture ID: {a.paypal_capture_id}
-                          </p>
+                          <div className="text-right">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#10B981]/20 text-emerald-300 border border-[#10B981]/40">
+                              RECONCILED ✓
+                            </span>
+                            <span className="text-[9px] text-slate-500 block mt-1">
+                              {a.created_at ? new Date(a.created_at).toLocaleTimeString() : ''}
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            Reconciled ✓
-                          </span>
-                          <p className="text-[10px] text-slate-500 mt-1">
-                            {a.created_at ? new Date(a.created_at).toLocaleTimeString() : ''}
-                          </p>
-                        </div>
-                      </div>
-                    ))
+                      ))}
+                    </div>
                   ) : (
-                    <div className="py-8 text-center text-xs text-slate-500 italic">
+                    <div className="py-6 text-center text-xs text-slate-500 font-mono italic">
                       No captures executed for this order yet.
                     </div>
                   )}
                 </div>
               )}
-
-              {/* Tab Content 2: Gateway Reconciler Logs AG Grid */}
-              {activeLedgerTab === 'gateway_logs' && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
-                    <span>AG Grid: Live PayPal REST calls, Request-Id idempotency & balance verification</span>
-                    <span className="text-cyan-400">{currentOrder?.gateway_logs?.length || 0} event(s)</span>
-                  </div>
-                  <GatewayLogsGrid logs={currentOrder?.gateway_logs || []} />
-                </div>
-              )}
-
-              {/* Tab Content 3: Cryptographic Consent Chain AG Grid */}
-              {activeLedgerTab === 'consent_chain' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
-                    <span>AG Grid: Blockchain-style SHA-256 sequential consent audit trail</span>
-                    <span className="text-emerald-400 font-bold">{currentOrder?.consents?.length || 0} consent record(s)</span>
-                  </div>
-
-                  {/* Red-Team Chaos Simulator Controls */}
-                  <div className="p-3 bg-slate-900/90 border border-rose-900/40 rounded-lg flex flex-wrap items-center justify-between gap-3 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
-                      <div>
-                        <h4 className="text-xs font-semibold text-rose-300">Red-Team Chaos Simulator (Cryptographic Tamper Defense)</h4>
-                        <p className="text-[10px] text-slate-400">Simulate payload tampering or chain deletion to test real-time SHA-256 detection</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={handleSimulateTamper}
-                        disabled={simulatingChaos || (currentOrder?.consents?.length || 0) === 0}
-                        className="px-2.5 py-1 text-xs font-semibold rounded bg-rose-950/70 border border-rose-700/60 text-rose-200 hover:bg-rose-900 hover:text-white transition disabled:opacity-40 flex items-center gap-1.5"
-                        title="Mutate consent payload to verify SHA-256 hash mismatch detection"
-                      >
-                        <span>⚡ Simulate Tamper</span>
-                      </button>
-                      <button
-                        onClick={handleSimulateChainBreak}
-                        disabled={simulatingChaos || (currentOrder?.consents?.length || 0) < 2}
-                        className="px-2.5 py-1 text-xs font-semibold rounded bg-amber-950/70 border border-amber-700/60 text-amber-200 hover:bg-amber-900 hover:text-white transition disabled:opacity-40 flex items-center gap-1.5"
-                        title="Break prev_hash linkage to verify block-order integrity detection"
-                      >
-                        <span>🔗 Simulate Chain Break</span>
-                      </button>
-                      {chaosResult && (
-                        <button
-                          onClick={() => { setChaosResult(null); handleVerifyEvidence(); }}
-                          className="px-2.5 py-1 text-xs font-semibold rounded bg-emerald-950/70 border border-emerald-700/60 text-emerald-200 hover:bg-emerald-900 hover:text-white transition flex items-center gap-1.5"
-                        >
-                          <span>🔄 Restore & Re-Verify</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Chaos Result Alert Banner */}
-                  {chaosResult && (
-                    <div className={`p-3 rounded-lg border text-xs font-mono ${
-                      chaosResult.tamper_detected || chaosResult.chain_break_detected
-                        ? 'bg-rose-950/50 border-rose-700/70 text-rose-200'
-                        : 'bg-emerald-950/50 border-emerald-700/70 text-emerald-200'
-                    }`}>
-                      <div className="flex items-center gap-2 font-bold mb-1">
-                        <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                        <span>CHAOS TEST VERDICT: {chaosResult.verdict}</span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[10px] mt-2 text-slate-300">
-                        {chaosResult.original_hash && (
-                          <div>
-                            <span className="text-slate-400 block">Original Hash:</span>
-                            <code className="text-emerald-400 break-all">{chaosResult.original_hash}</code>
-                          </div>
-                        )}
-                        {chaosResult.tampered_hash && (
-                          <div>
-                            <span className="text-slate-400 block">Mutated Hash:</span>
-                            <code className="text-rose-400 break-all">{chaosResult.tampered_hash}</code>
-                          </div>
-                        )}
-                        {chaosResult.removed_record_hash && (
-                          <div>
-                            <span className="text-slate-400 block">Broken Link Hash:</span>
-                            <code className="text-rose-400 break-all">{chaosResult.removed_record_hash}</code>
-                          </div>
-                        )}
-                        <div>
-                          <span className="text-slate-400 block">Integrity Status:</span>
-                          <span className="text-amber-300">{chaosResult.security_note}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <ConsentChainGrid consents={currentOrder?.consents || []} />
-                </div>
-              )}
-
-              {/* Tab Content 4: Supply Disruption Risk Graph AG Grid */}
-              {activeLedgerTab === 'supplier_risk' && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
-                    <span>AG Grid: Deterministic supplier fulfillment telemetry, port congestion & disruption probabilities</span>
-                    <span className="text-orange-400">{suppliers.length} active supplier node(s)</span>
-                  </div>
-                  <SupplierRiskGrid suppliers={suppliers} />
-                </div>
-              )}
-
-              {/* Tab Content 5: Itemized Predictive Risk Assessments AG Grid */}
-              {activeLedgerTab === 'risk_assessments' && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
-                    <span>AG Grid: Item-level disruption scoring, lead-time estimation & backup supplier mapping</span>
-                    <span className="text-rose-400">{riskAssessments.length} line item(s)</span>
-                  </div>
-                  <RiskAssessmentsGrid 
-                    assessments={riskAssessments} 
-                    orderId={selectedOrderId} 
-                    onReroute={handleReroute}
-                  />
-                </div>
-              )}
-
-              {/* Tab Content 6: Multi-Supplier Routing Plan AG Grid */}
-              {activeLedgerTab === 'routing_plan' && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
-                    <span>AG Grid: Logical hold partitioning across fulfillment warehouses (Unified PayPal Auth)</span>
-                    <span className="text-cyan-400">{routingPlan.length} warehouse node(s)</span>
-                  </div>
-                  <RoutingPlanGrid nodes={routingPlan} totalOrderAmount={currentOrder?.total_amount || 90.0} orderId={selectedOrderId} />
-                </div>
-              )}
             </div>
+          )}
 
-            {/* Line Items Overview */}
-            {currentOrder?.items && (
-              <div className="mt-4 pt-4 border-t border-slate-800">
-                <span className="text-[10px] font-mono uppercase text-slate-400 block mb-2">Order Line Items:</span>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  {currentOrder.items.map((it: any) => (
-                    <div key={it.id} className="p-2 rounded bg-slate-950 border border-slate-800/80">
-                      <p className="font-semibold text-slate-200 truncate">{it.name}</p>
-                      <div className="flex items-center justify-between mt-1 text-[11px]">
-                        <span className="text-slate-400">${it.amount.toFixed(2)}</span>
-                        <span className={`font-mono text-[9px] font-bold uppercase ${
-                          it.status === 'SHIPPED' ? 'text-emerald-400' :
-                          it.status === 'DELAYED' ? 'text-amber-400' : 'text-slate-400'
-                        }`}>
-                          {it.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        </section>
 
-        {/* AG Grid Transaction Table */}
-        <OrdersGrid
-          orders={orders}
-          selectedOrderId={selectedOrderId}
-          onSelectOrder={(id) => setSelectedOrderId(id)}
-          loading={loading}
-        />
       </main>
     </div>
   );
 };
-

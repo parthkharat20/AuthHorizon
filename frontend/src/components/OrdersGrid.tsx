@@ -372,65 +372,61 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
   ], [selectedOrderId, onSelectOrder]);
 
   return (
-    <div className="bg-slate-900/90 border border-slate-700/80 rounded-xl p-5 shadow-2xl backdrop-blur-md">
-      {/* AG Grid Header & KPI Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3 pb-3 border-b border-slate-800">
+    <div className="w-full bg-[#111622] border border-[#1E2638] rounded-md p-3.5 shadow-sm">
+      {/* Grid Sub-Header & Live KPIs */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3 pb-3 border-b border-[#1E2638]">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-              AG Grid Merchant Command Center
+            <h3 className="text-xs font-bold text-[#F1F5F9] flex items-center gap-1.5 uppercase tracking-wide">
+              <span className="w-2 h-2 rounded-full bg-[#0070BA]" />
+              Authorization Portfolio Ledger
             </h3>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">
+            <span className="px-1.5 py-0.5 text-[9px] font-mono font-semibold bg-[#0D111A] text-slate-400 rounded border border-[#1E2638]">
               AG Grid Community v33
             </span>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-emerald-400" />
-              Column Groups Active
-            </span>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Real-time multi-currency split authorization ledger, in-cell ratio visualizer & predictive risk telemetry
+          <p className="text-[11px] text-slate-400 mt-0.5 font-sans">
+            Real-time multi-currency split authorization ledger with deterministic hold tracking
           </p>
         </div>
 
         {/* Live Aggregation Badges */}
-        <div className="flex items-center gap-3 overflow-x-auto text-xs font-mono">
-          <div className="px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-center">
-            <span className="text-[10px] text-slate-400 uppercase block">Total Volume</span>
-            <span className="font-bold text-slate-100">${kpis.totalVolume.toFixed(2)}</span>
+        <div className="flex items-center gap-2 overflow-x-auto text-xs font-mono">
+          <div className="px-2.5 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-center">
+            <span className="text-[9px] text-slate-400 uppercase block">Total Volume</span>
+            <span className="font-bold text-[#F1F5F9] tabular-nums">${kpis.totalVolume.toFixed(2)}</span>
           </div>
-          <div className="px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-center">
-            <span className="text-[10px] text-emerald-400 uppercase block">Captured</span>
-            <span className="font-bold text-emerald-400">${kpis.totalCaptured.toFixed(2)}</span>
+          <div className="px-2.5 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-center">
+            <span className="text-[9px] text-emerald-400 uppercase block">Captured</span>
+            <span className="font-bold text-emerald-400 tabular-nums">${kpis.totalCaptured.toFixed(2)}</span>
           </div>
-          <div className="px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-center">
-            <span className="text-[10px] text-amber-400 uppercase block">Active Held</span>
-            <span className="font-bold text-amber-400">${kpis.totalHeld.toFixed(2)}</span>
+          <div className="px-2.5 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-center">
+            <span className="text-[9px] text-amber-400 uppercase block">Active Held</span>
+            <span className="font-bold text-amber-400 tabular-nums">${kpis.totalHeld.toFixed(2)}</span>
           </div>
-          <div className="px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-center">
-            <span className="text-[10px] text-cyan-400 uppercase block">Orders</span>
-            <span className="font-bold text-cyan-400">{orders.length}</span>
+          <div className="px-2.5 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-center">
+            <span className="text-[9px] text-slate-400 uppercase block">Orders</span>
+            <span className="font-bold text-slate-200 tabular-nums">{orders.length}</span>
           </div>
         </div>
       </div>
 
-      {/* Quick Filter, Layout Presets & CSV Export Toolbar (AG Grid Community v33 features) */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-3">
-        <div className="relative flex-1 w-full max-w-md">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
+      {/* Quick Filter, Layout Presets & CSV Export Toolbar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 mb-2.5">
+        <div className="relative flex-1 w-full max-w-sm">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={quickFilter}
             onChange={(e) => setQuickFilter(e.target.value)}
-            placeholder="Quick search orders, auth IDs, or status across all grid columns..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 font-mono transition-all"
+            placeholder="Search orders, auth IDs, or statuses..."
+            className="w-full pl-7 pr-2.5 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-[#0070BA] font-mono transition-all"
           />
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div className="flex items-center gap-1.5 self-end sm:self-auto">
           {savedLayoutNotice && (
-            <span className="text-xs font-mono font-bold text-cyan-400 animate-pulse px-2">
+            <span className="text-[10px] font-mono font-bold text-emerald-400 px-1">
               {savedLayoutNotice}
             </span>
           )}
@@ -438,35 +434,35 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           {/* Save / Restore Column State */}
           <button
             onClick={handleSaveLayout}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-1 transition-all"
+            className="px-2 py-1 rounded bg-[#0D111A] hover:bg-[#141B29] text-slate-300 border border-[#1E2638] text-[11px] font-medium flex items-center gap-1 transition-all"
             title="Save custom column order and widths to browser localStorage"
           >
-            <SlidersHorizontal className="w-3 h-3 text-cyan-400" />
+            <SlidersHorizontal className="w-3 h-3 text-[#0070BA]" />
             <span className="hidden md:inline">Save Layout</span>
           </button>
 
           <button
             onClick={handleRestoreLayout}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-1 transition-all"
+            className="px-2 py-1 rounded bg-[#0D111A] hover:bg-[#141B29] text-slate-300 border border-[#1E2638] text-[11px] font-medium flex items-center gap-1 transition-all"
             title="Restore saved column state or reset to default layout"
           >
-            <RotateCcw className="w-3 h-3 text-indigo-400" />
+            <RotateCcw className="w-3 h-3 text-slate-400" />
             <span className="hidden md:inline">Reset</span>
           </button>
 
           <button
             onClick={handleExportCsv}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm shrink-0"
+            className="px-2.5 py-1 rounded bg-[#0070BA] hover:bg-[#005ea6] text-white text-[11px] font-semibold flex items-center gap-1 transition-all shadow-sm shrink-0"
             title="Export current grid records to canonical CSV via AG Grid API"
           >
-            <Download className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Export Ledger CSV</span>
+            <Download className="w-3 h-3" />
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
 
       {/* The AG Grid React Table */}
-      <div style={{ height: '320px', width: '100%' }} className="ag-theme-quartz-dark rounded-lg overflow-hidden border border-slate-800 shadow-inner">
+      <div style={{ height: '310px', width: '100%' }} className="ag-theme-quartz-dark rounded overflow-hidden">
         <AgGridReact<OrderRow>
           ref={gridRef}
           loading={loading}
@@ -537,7 +533,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
 
       <div className="flex items-center justify-between mt-2.5 text-[11px] text-slate-400 font-mono">
         <span>Click any row to load order detail, line items & cryptographic audit chain</span>
-        <span className="text-cyan-400/90 font-semibold">Active Selection: Order #{selectedOrderId || 'None'}</span>
+        <span className="text-blue-400 font-semibold">Active Selection: Order #{selectedOrderId || 'None'}</span>
       </div>
     </div>
   );

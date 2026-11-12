@@ -169,21 +169,21 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
             value={quickFilter}
             onChange={(e) => setQuickFilter(e.target.value)}
             placeholder="Search consent hashes..."
-            className="w-full pl-7 pr-2 py-1 rounded bg-slate-950/70 border border-slate-800 text-[11px] text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 font-mono"
+            className="w-full pl-7 pr-2 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-[11px] text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-[#0070BA] font-mono"
           />
         </div>
 
         <button
           onClick={handleExportCsv}
-          className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-[11px] font-medium flex items-center gap-1 transition-all shrink-0"
+          className="px-2 py-1 rounded bg-[#0D111A] hover:bg-[#141B29] text-slate-300 border border-[#1E2638] text-[11px] font-medium flex items-center gap-1 transition-all shrink-0"
           title="Export consent audit chain to CSV"
         >
-          <Download className="w-3 h-3 text-cyan-400" />
+          <Download className="w-3 h-3 text-slate-400" />
           <span>Export Chain CSV</span>
         </button>
       </div>
 
-      <div style={{ width: '100%', minHeight: '130px' }} className="ag-theme-quartz-dark rounded-lg overflow-hidden border border-slate-800 shadow-inner">
+      <div style={{ width: '100%', minHeight: '130px' }} className="ag-theme-quartz-dark rounded overflow-hidden">
         <AgGridReact<ConsentChainItem>
           ref={gridRef}
           domLayout="autoHeight"

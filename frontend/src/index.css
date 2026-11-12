@@ -1,119 +1,75 @@
 @import "tailwindcss";
 
 @theme {
-  --color-navy-900: #0a1628;
-  --color-navy-800: #111d35;
-  --color-navy-700: #182744;
-  --color-navy-600: #1f3155;
-  --color-navy-500: #2a4070;
-  --color-paypal-blue: #003087;
-  --color-electric-blue: #0070e0;
-  --color-captured: #00a86b;
-  --color-held: #f59e0b;
-  --color-danger: #ef4444;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-bg-root: #090B10;
+  --color-surface-elevated: #111622;
+  --color-surface-secondary: #0D111A;
+  --color-border-hairline: #1E2638;
+  --color-text-primary: #F1F5F9;
+  --color-paypal-cobalt: #0070BA;
+  --color-paypal-deep: #003087;
+  --color-status-settled: #10B981;
+  --color-status-held: #F59E0B;
+  --color-status-alert: #EF4444;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 /* ── Base ──────────────────────────────────────── */
 body {
+  background-color: #090B10;
+  color: #F1F5F9;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Glassmorphism card ───────────────────────── */
-.glass-card {
-  background: rgba(17, 29, 53, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1rem;
+/* ── Tabular figures for financial numbers ────────── */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
 }
 
-/* ── Pulse-glow for Held segment ──────────────── */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
-  50%      { box-shadow: 0 0 24px rgba(245, 158, 11, 0.7); }
-}
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* ── Shimmer loader ───────────────────────────── */
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.shimmer {
-  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.08) 50%, transparent 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
-}
-
-/* ── Slide-in from bottom ─────────────────────── */
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-slide-up {
-  animation: slide-up 0.5s ease-out both;
-}
-
-/* ── Fade-in ──────────────────────────────────── */
-@keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-.animate-fade-in {
-  animation: fade-in 0.4s ease-out both;
-}
-
-/* ── Shrink-out for cancel ────────────────────── */
-@keyframes shrink-out {
-  from { max-width: 100%; opacity: 1; }
-  to   { max-width: 0%; opacity: 0; padding: 0; }
-}
-.animate-shrink-out {
-  animation: shrink-out 0.8s ease-in-out forwards;
-}
-
-/* ── AG Grid Dark Theme Overrides (v33 Quartz Dark & Alpine) ─────────────── */
+/* ── AG Grid Dark Theme Overrides (v33 Quartz Dark) ─────────── */
 .ag-theme-quartz-dark {
-  --ag-background-color: rgba(10, 16, 30, 0.7);
-  --ag-header-background-color: rgba(15, 23, 42, 0.95);
-  --ag-header-foreground-color: #94a3b8;
-  --ag-row-hover-color: rgba(6, 182, 212, 0.08);
-  --ag-selected-row-background-color: rgba(6, 182, 212, 0.15);
-  --ag-range-selection-border-color: #06b6d4;
-  --ag-border-color: rgba(51, 65, 85, 0.45);
-  --ag-odd-row-background-color: rgba(15, 23, 42, 0.25);
-  --ag-foreground-color: #f1f5f9;
-  --ag-font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --ag-background-color: #0D111A;
+  --ag-header-background-color: #111622;
+  --ag-header-foreground-color: #94A3B8;
+  --ag-header-cell-hover-background-color: #161D2E;
+  --ag-row-hover-color: rgba(0, 112, 186, 0.08);
+  --ag-selected-row-background-color: rgba(0, 112, 186, 0.16);
+  --ag-range-selection-border-color: #0070BA;
+  --ag-border-color: #1E2638;
+  --ag-row-border-color: #151C2C;
+  --ag-odd-row-background-color: #0A0E17;
+  --ag-foreground-color: #F1F5F9;
+  --ag-font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --ag-font-size: 12px;
-  --ag-row-border-color: rgba(51, 65, 85, 0.25);
-  --ag-cell-horizontal-padding: 10px;
-  border-radius: 0.75rem;
+  --ag-cell-horizontal-padding: 12px;
+  --ag-pinned-row-background-color: #131A29;
+  border: 1px solid #1E2638;
+  border-radius: 6px;
   overflow: hidden;
 }
 
 .ag-theme-alpine-dark {
-  --ag-background-color: rgba(17, 29, 53, 0.5);
-  --ag-header-background-color: rgba(10, 22, 40, 0.8);
-  --ag-odd-row-background-color: rgba(17, 29, 53, 0.3);
-  --ag-row-hover-color: rgba(0, 112, 224, 0.15);
-  --ag-selected-row-background-color: rgba(0, 112, 224, 0.2);
-  --ag-border-color: rgba(255, 255, 255, 0.06);
-  --ag-header-foreground-color: #94a3b8;
-  --ag-foreground-color: #e2e8f0;
+  --ag-background-color: #0D111A;
+  --ag-header-background-color: #111622;
+  --ag-header-foreground-color: #94A3B8;
+  --ag-row-hover-color: rgba(0, 112, 186, 0.08);
+  --ag-selected-row-background-color: rgba(0, 112, 186, 0.16);
+  --ag-border-color: #1E2638;
+  --ag-row-border-color: #151C2C;
+  --ag-foreground-color: #F1F5F9;
   --ag-font-family: "Inter", sans-serif;
-  --ag-font-size: 13px;
-  --ag-row-border-color: rgba(255, 255, 255, 0.04);
-  border-radius: 0.75rem;
+  --ag-font-size: 12px;
+  border: 1px solid #1E2638;
+  border-radius: 6px;
   overflow: hidden;
 }
 
-/* ── Scrollbar ────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+/* ── Minimalist Scrollbar ─────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #090B10; }
+::-webkit-scrollbar-thumb { background: #1E2638; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2A364F; }

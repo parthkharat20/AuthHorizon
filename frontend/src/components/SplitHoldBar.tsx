@@ -70,7 +70,7 @@ export const SplitHoldBar: React.FC<SplitHoldBarProps> = ({
               className="h-full bg-amber-400 flex items-center px-2.5 text-[11px] font-mono text-slate-900 font-semibold overflow-hidden transition-all duration-500"
               title={`Held: $${heldAmount.toFixed(2)} (${heldPct.toFixed(1)}%)`}
             >
-              <span className="truncate tabular-nums">⏳ ${heldAmount.toFixed(2)} HELD</span>
+              <span className="truncate tabular-nums font-bold">HELD: ${heldAmount.toFixed(2)}</span>
             </div>
           </>
         )}

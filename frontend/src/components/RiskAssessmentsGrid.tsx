@@ -248,7 +248,7 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
         </div>
       </div>
 
-      <div style={{ height: '260px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200">
+      <div style={{ height: '300px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200 shadow-xs">
         <AgGridReact<RiskAssessment>
           ref={gridRef}
           rowData={assessments}
@@ -260,16 +260,16 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
           getRowStyle={(params): RowStyle | undefined => {
             if (!params.data) return undefined;
             if (params.data.sku === 'ORDER COMPOSITE') {
-              return { background: 'rgba(15, 23, 42, 0.95)', fontWeight: 'bold' };
+              return { background: '#f8fafc', fontWeight: 'bold' };
             }
             if (params.data.risk_tier === 'CRITICAL') {
-              return { background: 'rgba(239, 68, 68, 0.08)', borderLeft: '3px solid #ef4444' };
+              return { background: '#fef2f2', borderLeft: '3px solid #ef4444' };
             }
             if (params.data.risk_tier === 'HIGH') {
-              return { background: 'rgba(249, 115, 22, 0.07)', borderLeft: '3px solid #f97316' };
+              return { background: '#fffbeb', borderLeft: '3px solid #f59e0b' };
             }
             if (params.data.risk_tier === 'MEDIUM') {
-              return { background: 'rgba(245, 158, 11, 0.05)', borderLeft: '3px solid #f59e0b' };
+              return { background: '#fffbeb', borderLeft: '3px solid #f59e0b' };
             }
             return undefined;
           }}
@@ -279,14 +279,11 @@ export const RiskAssessmentsGrid: React.FC<RiskAssessmentsGridProps> = ({
             filter: true,
             resizable: true,
           }}
-          overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-xs">No risk assessments computed yet for this order. Click "Assess Risk" above.</div>'
-          onFirstDataRendered={(params) => {
-            params.api.sizeColumnsToFit();
-          }}
+          overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-xs">No risk assessments computed yet for this order. Click "Evaluate Risk" above.</div>'
           animateRows={true}
-          rowHeight={40}
-          headerHeight={34}
-          groupHeaderHeight={28}
+          rowHeight={48}
+          headerHeight={38}
+          groupHeaderHeight={32}
         />
       </div>
     </div>

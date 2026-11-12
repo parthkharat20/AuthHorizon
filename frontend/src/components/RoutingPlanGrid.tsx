@@ -209,7 +209,7 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
         </div>
       </div>
 
-      <div style={{ height: '260px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200">
+      <div style={{ height: '300px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200 shadow-xs">
         <AgGridReact<RoutingNodeItem>
           ref={gridRef}
           rowData={nodes}
@@ -232,13 +232,10 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
             resizable: true,
           }}
           overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-xs">No multi-supplier routing plan computed for this order yet.</div>'
-          onFirstDataRendered={(params) => {
-            params.api.sizeColumnsToFit();
-          }}
           animateRows={true}
-          rowHeight={40}
-          headerHeight={34}
-          groupHeaderHeight={28}
+          rowHeight={48}
+          headerHeight={38}
+          groupHeaderHeight={32}
         />
       </div>
     </div>

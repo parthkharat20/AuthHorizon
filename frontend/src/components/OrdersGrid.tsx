@@ -125,26 +125,26 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
       children: [
         {
           field: 'id',
-          headerName: 'Order',
-          width: 90,
-          pinned: 'left', // Column Pinning (left)
+          headerName: 'Order ID',
+          width: 105,
+          minWidth: 100,
           cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             if (p.value === null) {
               return (
-                <div className="flex items-center h-full font-mono text-[10px] font-extrabold text-[#0070BA]">
+                <div className="flex items-center h-full font-mono text-xs font-extrabold text-[#0070BA]">
                   TOTALS
                 </div>
               );
             }
             const isSelected = p.value === selectedOrderId;
             return (
-              <div className="flex items-center gap-1.5 h-full">
-                <span className={`px-2 py-0.5 rounded font-mono text-xs font-bold ${
-                  isSelected ? 'bg-blue-50 text-[#0070BA] border border-blue-200' : 'bg-slate-100 text-slate-700 border border-slate-200'
+              <div className="flex items-center gap-2 h-full">
+                <span className={`px-2.5 py-1 rounded-md font-mono text-xs font-bold ${
+                  isSelected ? 'bg-blue-100 text-[#0070BA] ring-1 ring-blue-300' : 'bg-slate-100 text-slate-800'
                 }`}>
                   #{p.value}
                 </span>
-                {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-[#0070BA] animate-pulse" />}
+                {isSelected && <span className="w-2 h-2 rounded-full bg-[#0070BA] animate-pulse" />}
               </div>
             );
           },
@@ -153,19 +153,19 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
         {
           field: 'paypal_order_id',
           headerName: 'PayPal Order / Auth ID',
-          flex: 1.5,
-          minWidth: 180,
+          width: 230,
+          minWidth: 210,
           tooltipField: 'paypal_order_id', // Custom Tooltip bound
           cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             const authId = p.data?.auth_id;
             return (
-              <div className="flex flex-col justify-center h-full py-0.5 font-mono text-xs leading-tight">
-                <span className="text-slate-900 font-semibold truncate hover:text-[#0070BA] cursor-pointer" title={p.value}>
+              <div className="flex flex-col justify-center h-full py-1 font-mono text-xs leading-snug">
+                <span className="text-slate-900 font-bold truncate hover:text-[#0070BA] cursor-pointer" title={p.value}>
                   {p.value}
                 </span>
                 {authId && (
-                  <span className="text-[10px] text-slate-500 flex items-center gap-1 truncate" title={authId}>
-                    <Lock className="w-2.5 h-2.5 text-slate-400 inline shrink-0" />
+                  <span className="text-[11px] text-slate-500 flex items-center gap-1 truncate mt-0.5" title={authId}>
+                    <Lock className="w-3 h-3 text-slate-400 shrink-0" />
                     {authId}
                   </span>
                 )}
@@ -181,8 +181,9 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
       headerName: 'Hold Allocation',
       children: [
         {
-          headerName: 'Split-Hold Ratio',
-          width: 165,
+          headerName: 'Hold Allocation Ratio',
+          width: 190,
+          minWidth: 180,
           cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             const total = p.data?.total_amount || 1;
             const captured = p.data?.captured_amount || 0;
@@ -191,12 +192,12 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
             const heldPct = Math.min(100 - capPct, Math.round((held / total) * 100));
 
             return (
-              <div className="flex flex-col justify-center h-full gap-1">
-                <div className="flex justify-between text-[10px] font-mono leading-none">
-                  <span className="text-emerald-700 font-bold">{capPct}% Cap</span>
-                  <span className="text-amber-700 font-bold">{heldPct}% Hold</span>
+              <div className="flex flex-col justify-center h-full gap-1.5 w-full pr-2">
+                <div className="flex justify-between text-xs font-mono font-bold leading-none">
+                  <span className="text-emerald-700">{capPct}% Cap</span>
+                  <span className="text-amber-700">{heldPct}% Hold</span>
                 </div>
-                <div className="w-full h-2 bg-slate-100 border border-slate-200 rounded-full overflow-hidden flex shadow-inner">
+                <div className="w-full h-2.5 bg-slate-100 border border-slate-200 rounded-full overflow-hidden flex shadow-inner">
                   <div
                     style={{ width: `${capPct}%` }}
                     className="h-full bg-emerald-500 transition-all duration-300"
@@ -212,26 +213,6 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
             );
           },
         },
-        {
-          headerName: 'Cap %',
-          width: 75,
-          // AG Grid valueGetter: computed numeric ratio
-          valueGetter: (p: ValueGetterParams<OrderRow>) => {
-            if (!p.data || !p.data.total_amount) return 0;
-            return Math.round((p.data.captured_amount / p.data.total_amount) * 100);
-          },
-          // AG Grid custom comparator for proper numerical sorting
-          comparator: (a: number, b: number) => (a || 0) - (b || 0),
-          cellRenderer: (p: ICellRendererParams<OrderRow>) => (
-            <span className={`font-mono text-xs font-bold ${
-              p.value === 100 ? 'text-emerald-700' : p.value > 0 ? 'text-amber-700' : 'text-slate-400'
-            }`}>
-              {p.value}%
-            </span>
-          ),
-          cellClass: 'text-right font-mono flex items-center justify-end',
-          headerClass: 'text-right',
-        },
       ],
     },
 
@@ -241,27 +222,30 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
       children: [
         {
           field: 'total_amount',
-          headerName: 'Total',
-          width: 90,
+          headerName: 'Total USD',
+          width: 115,
+          minWidth: 110,
           valueFormatter: (p: ValueFormatterParams<OrderRow>) => p.value != null ? `$${Number(p.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—',
-          cellClass: 'font-semibold text-slate-900 text-right font-mono',
+          cellClass: 'font-bold text-slate-900 text-right font-mono text-sm flex items-center justify-end',
           headerClass: 'text-right',
         },
         {
           field: 'captured_amount',
           headerName: 'Captured',
-          width: 95,
+          width: 115,
+          minWidth: 110,
           valueFormatter: (p: ValueFormatterParams<OrderRow>) => p.value != null ? `$${Number(p.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—',
-          cellClass: 'text-emerald-700 font-bold text-right font-mono',
+          cellClass: 'text-emerald-700 font-bold text-right font-mono text-sm flex items-center justify-end',
           headerClass: 'text-right',
           cellStyle: (p) => (Number(p.value) > 0 ? { color: '#047857' } : undefined),
         },
         {
           field: 'held_amount',
-          headerName: 'Held',
-          width: 90,
+          headerName: 'Contingency Held',
+          width: 135,
+          minWidth: 130,
           valueFormatter: (p: ValueFormatterParams<OrderRow>) => p.value != null ? `$${Number(p.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—',
-          cellClass: 'text-amber-700 font-bold text-right font-mono',
+          cellClass: 'text-amber-700 font-bold text-right font-mono text-sm flex items-center justify-end',
           headerClass: 'text-right',
           cellStyle: (p) => (Number(p.value) > 0 ? { color: '#b45309', fontWeight: 'bold' } : undefined),
         },
@@ -274,8 +258,9 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
       children: [
         {
           field: 'status',
-          headerName: 'Lifecycle Status & Hold Window',
-          width: 215,
+          headerName: 'Lifecycle Status & Window',
+          width: 230,
+          minWidth: 220,
           cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             const val = p.value || 'CREATED';
             const daysLeft = p.data?.auth_days_remaining;
@@ -297,13 +282,13 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
             }
 
             return (
-              <div className="flex items-center gap-1.5 h-full">
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${badgeColor}`}>
-                  <Icon className="w-3 h-3 shrink-0" />
+              <div className="flex items-center gap-2 h-full">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase border ${badgeColor}`}>
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
                   {val}
                 </span>
                 {daysLeft !== undefined && daysLeft !== null && (
-                  <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full border ${
                     daysLeft > 14
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       : daysLeft >= 3
@@ -320,12 +305,13 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
         {
           field: 'risk_assessment',
           headerName: 'Supply Risk',
-          width: 185,
+          width: 175,
+          minWidth: 165,
           cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             const riskData = p.data?.risk_assessment;
             if (!riskData || riskData.disruption_probability === undefined) {
               return (
-                <div className="flex items-center h-full text-[10px] text-slate-500 font-mono italic">
+                <div className="flex items-center h-full text-xs text-slate-500 font-mono italic">
                   Unassessed
                 </div>
               );
@@ -341,8 +327,8 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
         },
         {
           headerName: 'Action',
-          width: 95,
-          pinned: 'right', // Column Pinning (right)
+          width: 105,
+          minWidth: 100,
           cellRenderer: (p: ICellRendererParams<OrderRow>) => {
             if (!p.data?.id) return null;
             const isSelected = p.data?.id === selectedOrderId;
@@ -350,13 +336,13 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
               <div className="flex items-center justify-center h-full">
                 <button
                   onClick={() => p.data?.id && onSelectOrder(p.data.id)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-[#0070BA] text-white shadow-xs'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
                   }`}
                 >
-                  <Eye className="w-3 h-3" />
+                  <Eye className="w-3.5 h-3.5" />
                   {isSelected ? 'Active' : 'Inspect'}
                 </button>
               </div>
@@ -368,61 +354,61 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
   ], [selectedOrderId, onSelectOrder]);
 
   return (
-    <div className="w-full bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+    <div className="w-full bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
       {/* Grid Sub-Header & Live KPIs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-200">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
+          <div className="flex items-center gap-2.5">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 uppercase tracking-wide">
               <span className="w-2.5 h-2.5 rounded-full bg-[#0070BA]" />
               Authorization Portfolio Ledger
             </h3>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-slate-100 text-slate-600 rounded-full border border-slate-200">
-              AG Grid Community v33
+            <span className="px-2.5 py-0.5 text-xs font-mono font-semibold bg-slate-100 text-slate-700 rounded-full border border-slate-200">
+              AG Grid v33 Enterprise Tier
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 mt-1 font-normal">
             Real-time multi-currency split authorization ledger with deterministic hold tracking
           </p>
         </div>
 
-        {/* Live Aggregation Badges */}
-        <div className="flex items-center gap-2 overflow-x-auto text-xs font-mono">
-          <div className="px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
-            <span className="text-[10px] text-slate-500 uppercase block">Total Volume</span>
-            <span className="font-bold text-slate-900 tabular-nums">${kpis.totalVolume.toFixed(2)}</span>
+        {/* Live Aggregation Badges - Expanded & High-Legibility */}
+        <div className="flex items-center gap-2.5 overflow-x-auto text-xs font-mono">
+          <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-center min-w-[105px]">
+            <span className="text-[11px] text-slate-500 font-medium uppercase tracking-wider block">Total Volume</span>
+            <span className="text-sm font-bold text-slate-900 tabular-nums">${kpis.totalVolume.toFixed(2)}</span>
           </div>
-          <div className="px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
-            <span className="text-[10px] text-emerald-700 uppercase block">Captured</span>
-            <span className="font-bold text-emerald-700 tabular-nums">${kpis.totalCaptured.toFixed(2)}</span>
+          <div className="px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-center min-w-[105px]">
+            <span className="text-[11px] text-emerald-800 font-medium uppercase tracking-wider block">Captured</span>
+            <span className="text-sm font-bold text-emerald-700 tabular-nums">${kpis.totalCaptured.toFixed(2)}</span>
           </div>
-          <div className="px-3.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-center">
-            <span className="text-[10px] text-amber-700 uppercase block">Active Held</span>
-            <span className="font-bold text-amber-700 tabular-nums">${kpis.totalHeld.toFixed(2)}</span>
+          <div className="px-4 py-2 rounded-xl bg-amber-50 border border-amber-200 text-center min-w-[105px]">
+            <span className="text-[11px] text-amber-800 font-medium uppercase tracking-wider block">Active Held</span>
+            <span className="text-sm font-bold text-amber-700 tabular-nums">${kpis.totalHeld.toFixed(2)}</span>
           </div>
-          <div className="px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
-            <span className="text-[10px] text-slate-500 uppercase block">Orders</span>
-            <span className="font-bold text-slate-900 tabular-nums">{orders.length}</span>
+          <div className="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-center min-w-[85px]">
+            <span className="text-[11px] text-slate-500 font-medium uppercase tracking-wider block">Orders</span>
+            <span className="text-sm font-bold text-slate-900 tabular-nums">{orders.length}</span>
           </div>
         </div>
       </div>
 
       {/* Quick Filter, Layout Presets & CSV Export Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-3.5">
-        <div className="relative flex-1 w-full max-w-sm">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+        <div className="relative flex-1 w-full max-w-md">
+          <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={quickFilter}
             onChange={(e) => setQuickFilter(e.target.value)}
-            placeholder="Search orders, auth IDs, or statuses..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0070BA] font-mono transition-all"
+            placeholder="Search orders, PayPal Auth IDs, or statuses..."
+            className="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0070BA] focus:bg-white font-mono transition-all"
           />
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           {savedLayoutNotice && (
-            <span className="text-[11px] font-mono font-bold text-emerald-600 px-1">
+            <span className="text-xs font-mono font-bold text-emerald-600 px-2">
               {savedLayoutNotice}
             </span>
           )}
@@ -430,35 +416,35 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           {/* Save / Restore Column State */}
           <button
             onClick={handleSaveLayout}
-            className="px-3 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-medium flex items-center gap-1.5 transition-all shadow-xs"
+            className="px-3.5 py-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
             title="Save custom column order and widths to browser localStorage"
           >
-            <SlidersHorizontal className="w-3 h-3 text-[#0070BA]" />
-            <span className="hidden md:inline">Save Layout</span>
+            <SlidersHorizontal className="w-3.5 h-3.5 text-[#0070BA]" />
+            <span className="hidden sm:inline">Save Layout</span>
           </button>
 
           <button
             onClick={handleRestoreLayout}
-            className="px-3 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 text-[11px] font-medium flex items-center gap-1.5 transition-all shadow-xs"
+            className="px-3.5 py-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
             title="Restore saved column state or reset to default layout"
           >
-            <RotateCcw className="w-3 h-3 text-slate-400" />
-            <span className="hidden md:inline">Reset</span>
+            <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+            <span className="hidden sm:inline">Reset</span>
           </button>
 
           <button
             onClick={handleExportCsv}
-            className="px-4 py-1.5 rounded-full bg-[#0070BA] hover:bg-[#005ea6] text-white text-[11px] font-medium flex items-center gap-1.5 transition-all shadow-xs shrink-0"
+            className="px-4 py-2 rounded-lg bg-[#0070BA] hover:bg-[#005ea6] text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer"
             title="Export current grid records to canonical CSV via AG Grid API"
           >
-            <Download className="w-3 h-3" />
+            <Download className="w-3.5 h-3.5" />
             <span>Export CSV</span>
           </button>
         </div>
       </div>
 
-      {/* The AG Grid React Table */}
-      <div style={{ height: '320px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200">
+      {/* The AG Grid React Table - Generous Row Height, Clear Text, No Forced Truncation */}
+      <div style={{ height: '410px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200 shadow-xs">
         <AgGridReact<OrderRow>
           ref={gridRef}
           loading={loading}
@@ -475,10 +461,10 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
               return { background: '#f8fafc', fontWeight: 'bold' };
             }
             if (params.data.risk_assessment?.risk_tier === 'CRITICAL') {
-              return { background: '#fef2f2', borderLeft: '3px solid #ef4444' };
+              return { background: '#fef2f2', borderLeft: '4px solid #ef4444' };
             }
             if (params.data.auth_days_remaining !== null && params.data.auth_days_remaining !== undefined && params.data.auth_days_remaining < 3) {
-              return { background: '#fffbeb', borderLeft: '3px solid #f59e0b' };
+              return { background: '#fffbeb', borderLeft: '4px solid #f59e0b' };
             }
             if (params.data.status === 'COMPLETED') {
               return { background: '#f0fdf4' };
@@ -486,7 +472,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
             return undefined;
           }}
           // Tooltip configuration
-          tooltipShowDelay={200}
+          tooltipShowDelay={150}
           tooltipInteraction={true}
           // Default column definition
           defaultColDef={{
@@ -497,8 +483,8 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
             tooltipComponent: OrderTooltip,
           }}
           // Overlay templates for empty and loading states
-          overlayLoadingTemplate='<div class="ag-overlay-loading-center font-mono text-cyan-400 text-sm">⟳ Loading real-time authorization ledger...</div>'
-          overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-sm">No orders recorded yet. Click "Create Demo Order" to start.</div>'
+          overlayLoadingTemplate='<div class="ag-overlay-loading-center font-mono text-[#0070BA] text-sm font-semibold">⟳ Synchronizing authorization ledger...</div>'
+          overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-sm">No orders recorded yet. Click "+ Create Order" to start.</div>'
           // Post-Sort Rows (bring CRITICAL risk or pinned to prioritized positions)
           postSortRows={(params) => {
             const rows = params.nodes;
@@ -517,19 +503,17 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           onRowClicked={(e) => {
             if (e.data?.id) onSelectOrder(e.data.id);
           }}
-          onFirstDataRendered={(params) => {
-            params.api.sizeColumnsToFit();
-          }}
+          // CRITICAL: Do NOT call sizeColumnsToFit() here. Columns preserve their full readable widths.
           animateRows={true}
-          rowHeight={46}
-          headerHeight={36}
-          groupHeaderHeight={30}
+          rowHeight={58}
+          headerHeight={44}
+          groupHeaderHeight={36}
         />
       </div>
 
-      <div className="flex items-center justify-between mt-2.5 text-[11px] text-slate-400 font-mono">
+      <div className="flex items-center justify-between mt-3 text-xs text-slate-500 font-mono">
         <span>Click any row to load order detail, line items & cryptographic audit chain</span>
-        <span className="text-blue-400 font-semibold">Active Selection: Order #{selectedOrderId || 'None'}</span>
+        <span className="text-[#0070BA] font-bold">Active Selection: Order #{selectedOrderId || 'None'}</span>
       </div>
     </div>
   );

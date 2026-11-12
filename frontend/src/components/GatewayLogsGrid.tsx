@@ -194,7 +194,7 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
         </button>
       </div>
 
-      <div style={{ height: '270px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200">
+      <div style={{ height: '300px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200 shadow-xs">
         <AgGridReact<GatewayLogItem>
           ref={gridRef}
           rowData={logs}
@@ -218,13 +218,10 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
             resizable: true,
           }}
           overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-xs">No PayPal REST gateway events recorded yet.</div>'
-          onFirstDataRendered={(params) => {
-            params.api.sizeColumnsToFit();
-          }}
           animateRows={true}
-          rowHeight={38}
-          headerHeight={32}
-          groupHeaderHeight={28}
+          rowHeight={46}
+          headerHeight={38}
+          groupHeaderHeight={32}
         />
       </div>
     </div>

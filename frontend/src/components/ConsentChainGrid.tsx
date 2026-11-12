@@ -183,7 +183,7 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
         </button>
       </div>
 
-      <div style={{ width: '100%', minHeight: '130px' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200">
+      <div style={{ width: '100%', minHeight: '160px' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200 shadow-xs">
         <AgGridReact<ConsentChainItem>
           ref={gridRef}
           domLayout="autoHeight"
@@ -194,7 +194,7 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           // Highlight GENESIS block with distinct indigo left accent
           getRowStyle={(params): RowStyle | undefined => {
             if (params.data?.prev_hash?.startsWith('00000000')) {
-              return { background: 'rgba(99, 102, 241, 0.08)', borderLeft: '3px solid #6366f1' };
+              return { background: '#f5f3ff', borderLeft: '3px solid #6366f1' };
             }
             return undefined;
           }}
@@ -208,13 +208,10 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
             enableCellChangeFlash: true,
           }}
           overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-xs">No cryptographic consent records logged for this order.</div>'
-          onFirstDataRendered={(params) => {
-            params.api.sizeColumnsToFit();
-          }}
           animateRows={true}
-          rowHeight={38}
-          headerHeight={32}
-          groupHeaderHeight={28}
+          rowHeight={46}
+          headerHeight={38}
+          groupHeaderHeight={32}
         />
       </div>
     </div>

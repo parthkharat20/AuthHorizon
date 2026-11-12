@@ -220,7 +220,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
         </div>
       </div>
 
-      <div style={{ height: '260px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200">
+      <div style={{ height: '300px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200 shadow-xs">
         <AgGridReact<SupplierNode>
           ref={gridRef}
           rowData={suppliers}
@@ -232,7 +232,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           // Highlight high-risk supplier nodes with getRowStyle
           getRowStyle={(params): RowStyle | undefined => {
             if (params.data?.composite_disruption_probability && params.data.composite_disruption_probability >= 0.50) {
-              return { background: 'rgba(239, 68, 68, 0.05)', borderLeft: '3px solid #f97316' };
+              return { background: '#fef2f2', borderLeft: '3px solid #ef4444' };
             }
             return undefined;
           }}
@@ -270,13 +270,10 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
             resizable: true,
           }}
           overlayNoRowsTemplate='<div class="ag-overlay-no-rows-center font-mono text-slate-500 text-xs">No supplier nodes active.</div>'
-          onFirstDataRendered={(params) => {
-            params.api.sizeColumnsToFit();
-          }}
           animateRows={true}
-          rowHeight={40}
-          headerHeight={34}
-          groupHeaderHeight={28}
+          rowHeight={48}
+          headerHeight={38}
+          groupHeaderHeight={32}
         />
       </div>
     </div>

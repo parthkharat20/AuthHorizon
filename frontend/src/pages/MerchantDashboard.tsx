@@ -588,58 +588,84 @@ export const MerchantDashboard: React.FC = () => {
 
         {/* ── A. Global Liquidity Summary Matrix ────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition-colors">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500 block mb-1">
-              Total Pre-Authorized
-            </span>
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Total Pre-Authorized
+              </span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium">
+                USD
+              </span>
+            </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-mono font-bold text-slate-900 tabular-nums">
+              <span className="text-3xl font-extrabold font-mono text-slate-900 tabular-nums tracking-tight">
                 ${portfolioSummary.totalAuth.toFixed(2)}
               </span>
-              <span className="text-xs font-mono text-slate-400">USD</span>
             </div>
+            <p className="text-[11px] text-slate-400 mt-1 font-mono">
+              29-day max reserve window
+            </p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition-colors">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-emerald-700 block mb-1">
-              Settled & Captured
-            </span>
-            <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-mono font-bold text-emerald-700 tabular-nums">
-                ${portfolioSummary.totalCap.toFixed(2)}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800">
+                Settled & Captured
               </span>
-              <span className="text-xs font-mono text-emerald-600">
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">
                 {portfolioSummary.totalAuth > 0 ? `${((portfolioSummary.totalCap / portfolioSummary.totalAuth) * 100).toFixed(1)}%` : '0%'}
               </span>
             </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-3xl font-extrabold font-mono text-emerald-700 tabular-nums tracking-tight">
+                ${portfolioSummary.totalCap.toFixed(2)}
+              </span>
+            </div>
+            <p className="text-[11px] text-emerald-700/80 mt-1 font-mono">
+              Instant multi-party split capture
+            </p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition-colors">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-amber-700 block mb-1">
-              Active Contingency Hold
-            </span>
-            <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-mono font-bold text-amber-700 tabular-nums">
-                ${portfolioSummary.totalHeld.toFixed(2)}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-amber-800">
+                Active Contingency Hold
               </span>
-              <span className="text-xs font-mono text-amber-600">
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-bold border border-amber-200">
                 {portfolioSummary.totalAuth > 0 ? `${((portfolioSummary.totalHeld / portfolioSummary.totalAuth) * 100).toFixed(1)}%` : '0%'}
               </span>
             </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-3xl font-extrabold font-mono text-amber-700 tabular-nums tracking-tight">
+                ${portfolioSummary.totalHeld.toFixed(2)}
+              </span>
+            </div>
+            <p className="text-[11px] text-amber-700/80 mt-1 font-mono">
+              Zero frozen supplier capital
+            </p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-slate-300 transition-colors">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500 block mb-1">
-              Portfolio Health
-            </span>
-            <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-mono font-bold text-slate-900 tabular-nums">
-                {orders.length} Active
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Portfolio Health
               </span>
-              <span className="text-xs font-mono text-amber-700 font-semibold">
+              <span className={`text-[11px] font-mono px-2 py-0.5 rounded-md font-bold border ${
+                portfolioSummary.delayedCount > 0
+                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              }`}>
                 {portfolioSummary.delayedCount} Delayed
               </span>
             </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-3xl font-extrabold font-mono text-slate-900 tabular-nums tracking-tight">
+                {orders.length} <span className="text-base font-normal text-slate-500">Active</span>
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1 font-mono">
+              Deterministic state verification
+            </p>
           </div>
         </div>
 

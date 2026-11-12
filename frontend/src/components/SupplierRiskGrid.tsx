@@ -220,7 +220,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
         </div>
       </div>
 
-      <div style={{ height: '260px', width: '100%' }} className="ag-theme-quartz-dark rounded overflow-hidden">
+      <div style={{ height: '260px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200">
         <AgGridReact<SupplierNode>
           ref={gridRef}
           rowData={suppliers}

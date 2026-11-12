@@ -209,7 +209,7 @@ export const RoutingPlanGrid: React.FC<RoutingPlanGridProps> = ({
         </div>
       </div>
 
-      <div style={{ height: '260px', width: '100%' }} className="ag-theme-quartz-dark rounded overflow-hidden">
+      <div style={{ height: '260px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200">
         <AgGridReact<RoutingNodeItem>
           ref={gridRef}
           rowData={nodes}

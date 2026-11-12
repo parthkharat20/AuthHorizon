@@ -224,7 +224,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           comparator: (a: number, b: number) => (a || 0) - (b || 0),
           cellRenderer: (p: ICellRendererParams<OrderRow>) => (
             <span className={`font-mono text-xs font-bold ${
-              p.value === 100 ? 'text-emerald-400' : p.value > 0 ? 'text-amber-400' : 'text-slate-400'
+              p.value === 100 ? 'text-emerald-700' : p.value > 0 ? 'text-amber-700' : 'text-slate-400'
             }`}>
               {p.value}%
             </span>
@@ -244,7 +244,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           headerName: 'Total',
           width: 90,
           valueFormatter: (p: ValueFormatterParams<OrderRow>) => p.value != null ? `$${Number(p.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—',
-          cellClass: 'font-semibold text-slate-200 text-right font-mono',
+          cellClass: 'font-semibold text-slate-900 text-right font-mono',
           headerClass: 'text-right',
         },
         {
@@ -252,22 +252,18 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           headerName: 'Captured',
           width: 95,
           valueFormatter: (p: ValueFormatterParams<OrderRow>) => p.value != null ? `$${Number(p.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—',
-          cellClass: 'text-emerald-400 font-bold text-right font-mono',
+          cellClass: 'text-emerald-700 font-bold text-right font-mono',
           headerClass: 'text-right',
-          cellStyle: (p) => (Number(p.value) > 0 ? { color: '#34d399' } : undefined),
+          cellStyle: (p) => (Number(p.value) > 0 ? { color: '#047857' } : undefined),
         },
         {
           field: 'held_amount',
           headerName: 'Held',
           width: 90,
           valueFormatter: (p: ValueFormatterParams<OrderRow>) => p.value != null ? `$${Number(p.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—',
-          cellClass: 'text-amber-400 font-bold text-right font-mono',
+          cellClass: 'text-amber-700 font-bold text-right font-mono',
           headerClass: 'text-right',
-          cellStyle: (p) => {
-            if (!p.value) return undefined;
-            if (Number(p.value) > 50) return { color: '#f59e0b', fontWeight: 'bold' };
-            return { color: '#fbbf24' };
-          },
+          cellStyle: (p) => (Number(p.value) > 0 ? { color: '#b45309', fontWeight: 'bold' } : undefined),
         },
       ],
     },
@@ -356,8 +352,8 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
                   onClick={() => p.data?.id && onSelectOrder(p.data.id)}
                   className={`px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all ${
                     isSelected
-                      ? 'bg-[#0071e3] text-white shadow-xs'
-                      : 'bg-[#1c1c1e] hover:bg-[#232326] text-[#a1a1a6] border border-[#2c2c2e]'
+                      ? 'bg-[#0070BA] text-white shadow-xs'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
                   }`}
                 >
                   <Eye className="w-3 h-3" />
@@ -372,61 +368,61 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
   ], [selectedOrderId, onSelectOrder]);
 
   return (
-    <div className="w-full bg-[#161618] border border-[#2c2c2e] rounded-2xl p-4 shadow-xs">
+    <div className="w-full bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
       {/* Grid Sub-Header & Live KPIs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3.5 pb-3 border-b border-[#2c2c2e]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-xs font-semibold text-[#f5f5f7] flex items-center gap-1.5 uppercase tracking-wide">
-              <span className="w-2 h-2 rounded-full bg-[#2997ff]" />
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wide">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#0070BA]" />
               Authorization Portfolio Ledger
             </h3>
-            <span className="px-2 py-0.5 text-[9px] font-mono font-semibold bg-[#1c1c1e] text-[#a1a1a6] rounded-full border border-[#2c2c2e]">
+            <span className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-slate-100 text-slate-600 rounded-full border border-slate-200">
               AG Grid Community v33
             </span>
           </div>
-          <p className="text-[11px] text-[#86868b] mt-0.5 font-sans">
+          <p className="text-xs text-slate-500 mt-0.5">
             Real-time multi-currency split authorization ledger with deterministic hold tracking
           </p>
         </div>
 
         {/* Live Aggregation Badges */}
         <div className="flex items-center gap-2 overflow-x-auto text-xs font-mono">
-          <div className="px-3 py-1.5 rounded-xl bg-[#121214] border border-[#2c2c2e] text-center">
-            <span className="text-[9px] text-[#86868b] uppercase block">Total Volume</span>
-            <span className="font-bold text-[#f5f5f7] tabular-nums">${kpis.totalVolume.toFixed(2)}</span>
+          <div className="px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
+            <span className="text-[10px] text-slate-500 uppercase block">Total Volume</span>
+            <span className="font-bold text-slate-900 tabular-nums">${kpis.totalVolume.toFixed(2)}</span>
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-[#121214] border border-[#2c2c2e] text-center">
-            <span className="text-[9px] text-[#30d158] uppercase block">Captured</span>
-            <span className="font-bold text-[#30d158] tabular-nums">${kpis.totalCaptured.toFixed(2)}</span>
+          <div className="px-3.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+            <span className="text-[10px] text-emerald-700 uppercase block">Captured</span>
+            <span className="font-bold text-emerald-700 tabular-nums">${kpis.totalCaptured.toFixed(2)}</span>
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-[#121214] border border-[#2c2c2e] text-center">
-            <span className="text-[9px] text-[#ff9f0a] uppercase block">Active Held</span>
-            <span className="font-bold text-[#ff9f0a] tabular-nums">${kpis.totalHeld.toFixed(2)}</span>
+          <div className="px-3.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-center">
+            <span className="text-[10px] text-amber-700 uppercase block">Active Held</span>
+            <span className="font-bold text-amber-700 tabular-nums">${kpis.totalHeld.toFixed(2)}</span>
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-[#121214] border border-[#2c2c2e] text-center">
-            <span className="text-[9px] text-[#86868b] uppercase block">Orders</span>
-            <span className="font-bold text-[#f5f5f7] tabular-nums">{orders.length}</span>
+          <div className="px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
+            <span className="text-[10px] text-slate-500 uppercase block">Orders</span>
+            <span className="font-bold text-slate-900 tabular-nums">{orders.length}</span>
           </div>
         </div>
       </div>
 
       {/* Quick Filter, Layout Presets & CSV Export Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 mb-3">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-3.5">
         <div className="relative flex-1 w-full max-w-sm">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#86868b] pointer-events-none" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={quickFilter}
             onChange={(e) => setQuickFilter(e.target.value)}
             placeholder="Search orders, auth IDs, or statuses..."
-            className="w-full pl-8 pr-3 py-1.5 rounded-full bg-[#121214] border border-[#2c2c2e] text-xs text-[#f5f5f7] placeholder:text-[#86868b] focus:outline-none focus:border-[#0071e3] font-mono transition-all"
+            className="w-full pl-8 pr-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0070BA] font-mono transition-all"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 self-end sm:self-auto">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           {savedLayoutNotice && (
-            <span className="text-[10px] font-mono font-bold text-[#30d158] px-1">
+            <span className="text-[11px] font-mono font-bold text-emerald-600 px-1">
               {savedLayoutNotice}
             </span>
           )}
@@ -434,25 +430,25 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           {/* Save / Restore Column State */}
           <button
             onClick={handleSaveLayout}
-            className="px-3 py-1.5 rounded-full bg-[#1c1c1e] hover:bg-[#232326] text-[#f5f5f7] border border-[#2c2c2e] text-[11px] font-medium flex items-center gap-1 transition-all"
+            className="px-3 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-medium flex items-center gap-1.5 transition-all shadow-xs"
             title="Save custom column order and widths to browser localStorage"
           >
-            <SlidersHorizontal className="w-3 h-3 text-[#2997ff]" />
+            <SlidersHorizontal className="w-3 h-3 text-[#0070BA]" />
             <span className="hidden md:inline">Save Layout</span>
           </button>
 
           <button
             onClick={handleRestoreLayout}
-            className="px-3 py-1.5 rounded-full bg-[#1c1c1e] hover:bg-[#232326] text-[#a1a1a6] hover:text-white border border-[#2c2c2e] text-[11px] font-medium flex items-center gap-1 transition-all"
+            className="px-3 py-1.5 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 text-[11px] font-medium flex items-center gap-1.5 transition-all shadow-xs"
             title="Restore saved column state or reset to default layout"
           >
-            <RotateCcw className="w-3 h-3 text-[#86868b]" />
+            <RotateCcw className="w-3 h-3 text-slate-400" />
             <span className="hidden md:inline">Reset</span>
           </button>
 
           <button
             onClick={handleExportCsv}
-            className="px-3.5 py-1.5 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-white text-[11px] font-medium flex items-center gap-1 transition-all shadow-xs shrink-0"
+            className="px-4 py-1.5 rounded-full bg-[#0070BA] hover:bg-[#005ea6] text-white text-[11px] font-medium flex items-center gap-1.5 transition-all shadow-xs shrink-0"
             title="Export current grid records to canonical CSV via AG Grid API"
           >
             <Download className="w-3 h-3" />
@@ -462,7 +458,7 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
       </div>
 
       {/* The AG Grid React Table */}
-      <div style={{ height: '310px', width: '100%' }} className="ag-theme-quartz-dark rounded overflow-hidden">
+      <div style={{ height: '320px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200">
         <AgGridReact<OrderRow>
           ref={gridRef}
           loading={loading}
@@ -476,16 +472,16 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           getRowStyle={(params): RowStyle | undefined => {
             if (!params.data) return undefined;
             if (params.data.id === null) {
-              return { background: 'rgba(15, 23, 42, 0.95)', fontWeight: 'bold' };
+              return { background: '#f8fafc', fontWeight: 'bold' };
             }
             if (params.data.risk_assessment?.risk_tier === 'CRITICAL') {
-              return { background: 'rgba(239, 68, 68, 0.08)', borderLeft: '3px solid #ef4444' };
+              return { background: '#fef2f2', borderLeft: '3px solid #ef4444' };
             }
             if (params.data.auth_days_remaining !== null && params.data.auth_days_remaining !== undefined && params.data.auth_days_remaining < 3) {
-              return { background: 'rgba(245, 158, 11, 0.08)', borderLeft: '3px solid #f59e0b' };
+              return { background: '#fffbeb', borderLeft: '3px solid #f59e0b' };
             }
             if (params.data.status === 'COMPLETED') {
-              return { background: 'rgba(16, 185, 129, 0.04)' };
+              return { background: '#f0fdf4' };
             }
             return undefined;
           }}

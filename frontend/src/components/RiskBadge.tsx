@@ -10,10 +10,10 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ probability, tier, delayDa
   const pct = Math.round(probability * 100);
   
   const tierStyles: Record<string, string> = {
-    LOW: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40',
-    MEDIUM: 'bg-amber-500/15 text-amber-300 border-amber-500/40',
-    HIGH: 'bg-orange-500/15 text-orange-300 border-orange-500/40',
-    CRITICAL: 'bg-rose-500/15 text-rose-300 border-rose-500/40 animate-pulse',
+    LOW: 'bg-emerald-50 text-emerald-700 border-emerald-300',
+    MEDIUM: 'bg-amber-50 text-amber-700 border-amber-300',
+    HIGH: 'bg-orange-50 text-orange-700 border-orange-300',
+    CRITICAL: 'bg-rose-50 text-rose-700 border-rose-300 animate-pulse',
   };
 
   const barColor: Record<string, string> = {
@@ -26,9 +26,9 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ probability, tier, delayDa
   return (
     <div className="flex items-center gap-2 h-full">
       {/* Mini risk bar (CSS-only sparkline alternative) */}
-      <div className="w-16 h-2 bg-slate-800 rounded-full overflow-hidden flex-shrink-0">
+      <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden flex-shrink-0">
         <div
-          className={`h-full rounded-full transition-all duration-500 ${barColor[tier] || 'bg-slate-500'}`}
+          className={`h-full rounded-full transition-all duration-500 ${barColor[tier] || 'bg-slate-400'}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -42,7 +42,7 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({ probability, tier, delayDa
       </span>
       
       {/* Percentage */}
-      <span className="text-[10px] font-mono text-slate-400">{pct}%</span>
+      <span className="text-[10px] font-mono text-slate-500 font-semibold">{pct}%</span>
     </div>
   );
 };

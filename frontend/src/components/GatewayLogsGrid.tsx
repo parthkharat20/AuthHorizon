@@ -194,7 +194,7 @@ export const GatewayLogsGrid: React.FC<GatewayLogsGridProps> = ({ logs }) => {
         </button>
       </div>
 
-      <div style={{ height: '270px', width: '100%' }} className="ag-theme-quartz-dark rounded overflow-hidden">
+      <div style={{ height: '270px', width: '100%' }} className="ag-theme-quartz rounded-xl overflow-hidden border border-slate-200">
         <AgGridReact<GatewayLogItem>
           ref={gridRef}
           rowData={logs}

@@ -36,10 +36,74 @@ import { RiskAssessmentsGrid } from '../components/RiskAssessmentsGrid';
 import { RoutingPlanGrid } from '../components/RoutingPlanGrid';
 import { SupplierNode, RiskAssessment } from '../types';
 
+const DEMO_INITIAL_ORDERS = [
+  {
+    id: 1,
+    paypal_order_id: "81R116453E1577428-DEMO1",
+    auth_id: "AUTH-DEMO1-90-HELD",
+    total_amount: 90.0,
+    captured_amount: 0.0,
+    held_amount: 90.0,
+    status: "AUTHORIZED",
+    items_count: 3,
+    auth_days_remaining: 29,
+    risk_assessment: {
+      disruption_probability: 0.12,
+      risk_tier: "LOW",
+      estimated_delay_days: 0,
+    },
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 2,
+    paypal_order_id: "42K998124B9014112-DEMO2",
+    auth_id: "AUTH-DEMO2-PARTIAL",
+    total_amount: 90.0,
+    captured_amount: 60.0,
+    held_amount: 30.0,
+    status: "PARTIALLY_CAPTURED",
+    items_count: 3,
+    auth_days_remaining: 21,
+    risk_assessment: {
+      disruption_probability: 0.65,
+      risk_tier: "HIGH",
+      estimated_delay_days: 6,
+    },
+    created_at: new Date(Date.now() - 3600000 * 24 * 8).toISOString()
+  },
+  {
+    id: 3,
+    paypal_order_id: "19C772391D4409188-DEMO3",
+    auth_id: "AUTH-DEMO3-SWAP-RESOLVED",
+    total_amount: 90.0,
+    captured_amount: 88.0,
+    held_amount: 0.0,
+    status: "COMPLETED",
+    items_count: 3,
+    auth_days_remaining: 0,
+    risk_assessment: {
+      disruption_probability: 0.05,
+      risk_tier: "LOW",
+      estimated_delay_days: 0,
+    },
+    created_at: new Date(Date.now() - 3600000 * 24 * 15).toISOString()
+  }
+];
+
+const DEFAULT_ORDER_ITEMS = [
+  { id: 101, sku: "SKU-BEAR-01", name: "Precision Bearings (Set of 4)", amount: 30.0, quantity: 1, status: "IN_STOCK" },
+  { id: 102, sku: "SKU-PUMP-02", name: "Hydraulic Pump Assembly", amount: 30.0, quantity: 1, status: "IN_STOCK" },
+  { id: 103, sku: "SKU-COAT-03", name: "Ceramic Coating Kit Industrial", amount: 30.0, quantity: 1, status: "IN_STOCK" }
+];
+
 export const MerchantDashboard: React.FC = () => {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
-  const [currentOrder, setCurrentOrder] = useState<any | null>(null);
+  const [orders, setOrders] = useState<any[]>(DEMO_INITIAL_ORDERS);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(1);
+  const [currentOrder, setCurrentOrder] = useState<any | null>({
+    ...DEMO_INITIAL_ORDERS[0],
+    items: DEFAULT_ORDER_ITEMS
+  });
+  const [inspectorTab, setInspectorTab] = useState<'hold' | 'notice'>('hold');
   const [loading, setLoading] = useState<boolean>(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [verifyingChain, setVerifyingChain] = useState<boolean>(false);
@@ -105,12 +169,15 @@ export const MerchantDashboard: React.FC = () => {
   const fetchOrders = async () => {
     try {
       const res = await axios.get('/api/orders');
-      setOrders(res.data);
-      if (res.data.length > 0 && !selectedOrderId) {
-        setSelectedOrderId(res.data[0].id);
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setOrders(res.data);
+        if (!selectedOrderId) {
+          setSelectedOrderId(res.data[0].id);
+        }
       }
     } catch (err) {
-      console.error('Error fetching orders:', err);
+      // Backend not yet reachable or empty, preserve fallback state
+      console.warn('Orders fetch note:', err);
     }
   };
 
@@ -118,9 +185,11 @@ export const MerchantDashboard: React.FC = () => {
   const fetchOrderDetails = async (id: number) => {
     try {
       const res = await axios.get(`/api/orders/${id}`);
-      setCurrentOrder(res.data);
+      if (res.data) {
+        setCurrentOrder(res.data);
+      }
     } catch (err) {
-      console.error('Error fetching order details:', err);
+      console.warn('Order details fetch note:', err);
     }
   };
 
@@ -351,31 +420,35 @@ export const MerchantDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-[#0070BA] selection:text-white">
       {/* ── Top Navigation Bar ────────────────────────────────────────── */}
-      <header className="glass-header sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between">
+      <header className="sticky top-0 z-50 h-16 px-6 lg:px-8 border-b border-slate-200 bg-white/95 backdrop-blur-md flex items-center justify-between shadow-xs">
+        {/* Left: Authentic PayPal Monogram + Product Identity */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#0070BA] flex items-center justify-center font-bold text-white text-xs shadow-xs">
-            PH
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#003087]/5 border border-slate-200 shadow-xs">
+            <svg className="w-5 h-5 shrink-0" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 5.5H18.2C22.5 5.5 24.5 7.6 24 11.5C23.4 15.6 20.6 17.5 16.5 17.5H13.2L11.5 27.5H7.5L10 5.5Z" fill="#003087"/>
+              <path d="M13.5 10H20.7C24.3 10 26 11.7 25.5 15.1C25 18.7 22.5 20.4 19 20.4H16L14.5 29.5H11L13.5 10Z" fill="#0070BA"/>
+              <path d="M16 17.5H19C22.5 17.5 25 15.8 25.5 12.2C25.8 10.4 25.2 9 24 8.1C23.4 11.3 21 13 17.5 13H14.2L13.2 19L14.5 29.5H16L16 17.5Z" fill="#001C66" opacity="0.3"/>
+            </svg>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <span className="text-base font-bold text-slate-900 tracking-tight">PayPal Horizon</span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-              Protocol v2.4
+            <span className="hidden sm:inline-block text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+              Institutional Desk
             </span>
           </div>
         </div>
 
-        {/* Navigation Anchors */}
-        <nav className="hidden md:flex items-center gap-7 text-xs font-medium text-slate-600">
-          <a href="#how-it-works" className="hover:text-slate-900 transition-colors">How It Works</a>
-          <a href="#features" className="hover:text-slate-900 transition-colors">Features</a>
-          <a href="#ledger" className="hover:text-slate-900 transition-colors font-semibold text-[#0070BA]">Live Ledger</a>
-          <a href="#workbench" className="hover:text-slate-900 transition-colors">Telemetry & Defense</a>
+        {/* Center: Spaced Navigation Anchors */}
+        <nav className="hidden md:flex items-center gap-8 text-xs font-medium text-slate-600">
+          <a href="#how-it-works" className="hover:text-slate-900 transition-colors">Architecture</a>
+          <a href="#ledger" className="hover:text-[#0070BA] font-semibold text-[#0070BA] transition-colors">Settlement Ledger</a>
+          <a href="#workbench" className="hover:text-slate-900 transition-colors">Telemetry Workbench</a>
           {selectedOrderId && (
             <a
               href={`/consent/${selectedOrderId}`}
               target="_blank"
               rel="noreferrer"
-              className="hover:text-[#0070BA] transition-colors flex items-center gap-1 font-semibold"
+              className="text-[#0070BA] hover:text-[#005ea6] transition-colors flex items-center gap-1 font-semibold"
             >
               <span>Buyer Portal</span>
               <ExternalLink className="w-3 h-3" />
@@ -383,35 +456,25 @@ export const MerchantDashboard: React.FC = () => {
           )}
         </nav>
 
-        {/* Status Indicators & Action CTA */}
-        <div className="flex items-center gap-2.5">
+        {/* Right: Technical Badges & Primary PayPal Button */}
+        <div className="flex items-center gap-3">
           {/* Test Health Badge */}
-          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-mono">
+          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-mono">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>90/90 Tests</span>
           </div>
 
-          {/* Gateway Sandbox Mode */}
+          {/* Gateway Status */}
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-mono">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{systemHealth?.gateway === 'paypal_sandbox' ? 'PayPal Sandbox' : 'Gateway Ready'}</span>
+            <span>{systemHealth?.gateway === 'paypal_sandbox' ? 'PayPal Sandbox' : 'REST v2 Active'}</span>
           </div>
 
-          {/* Live SSE Stream */}
-          <div className={`hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-mono ${
-            sseConnected 
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
-              : 'bg-slate-100 border-slate-200 text-slate-500'
-          }`}>
-            <span className={`w-2 h-2 rounded-full ${sseConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-            <span>{sseConnected ? 'Live SSE' : 'Polling Sync'}</span>
-          </div>
-
-          {/* Primary Action Button */}
+          {/* Primary Action Button (PayPal Cobalt) */}
           <button
             onClick={handleCreateDemoOrder}
             disabled={loading}
-            className="px-4 py-1.5 rounded-full bg-[#FF5500] hover:bg-[#ea4c00] text-white text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-4 py-2 rounded-lg bg-[#0070BA] hover:bg-[#005ea6] text-white text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
             <Package className="w-3.5 h-3.5" />
             <span>+ Create Order</span>
@@ -427,22 +490,22 @@ export const MerchantDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* ── Protocol Hero Section (Clean Alignment as in Reference) ─── */}
-      <section className="pt-20 pb-16 px-4 max-w-5xl mx-auto text-center" id="how-it-works">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-md border border-orange-500/40 text-orange-600 font-mono text-xs uppercase tracking-wider bg-orange-50/60 mb-6 font-semibold">
-          OPEN PROTOCOL • PAYPAL REST v2
+      {/* ── Protocol Hero Section ─── */}
+      <section className="pt-16 pb-12 px-4 max-w-5xl mx-auto text-center" id="how-it-works">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-blue-200 text-[#0070BA] font-mono text-xs uppercase tracking-wider bg-blue-50/80 mb-5 font-semibold">
+          PAYPAL REST v2 • AUTONOMOUS LIQUIDITY ENGINE
         </div>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.12]">
-          AuthHorizon: native payments for <br />
-          <span className="text-[#FF5500]">Supply Chains & AI Agents</span>
+        <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.14]">
+          Autonomous Multi-Supplier Payments for <br />
+          <span className="text-[#0070BA]">Global Supply Chains & AI Agents</span>
         </h1>
-        <p className="mt-5 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed">
-          A universal HTTP-based split-hold protocol that enables autonomous multi-supplier capture from anywhere. Zero frozen liquidity.
+        <p className="mt-4 text-sm sm:text-base text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed">
+          Dynamic 29-day pre-authorization holds, autonomous multi-supplier split captures, and cryptographic SHA-256 buyer consent chains. Zero frozen liquidity.
         </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <a
             href="#ledger"
-            className="px-6 py-3 rounded-lg bg-[#FF5500] hover:bg-[#ea4c00] text-white font-semibold text-sm shadow-sm transition-all flex items-center gap-2"
+            className="px-5 py-2.5 rounded-lg bg-[#0070BA] hover:bg-[#005ea6] text-white font-semibold text-xs shadow-sm transition-all flex items-center gap-2"
           >
             <span>Launch Settlement Ledger</span>
             <ArrowRight className="w-4 h-4" />
@@ -452,7 +515,7 @@ export const MerchantDashboard: React.FC = () => {
               href={`/consent/${selectedOrderId}`}
               target="_blank"
               rel="noreferrer"
-              className="px-6 py-3 rounded-lg bg-white hover:bg-slate-50 text-slate-800 font-semibold text-sm border border-slate-300 shadow-xs transition-all flex items-center gap-2"
+              className="px-5 py-2.5 rounded-lg bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs border border-slate-300 shadow-xs transition-all flex items-center gap-2"
             >
               <span>Open Buyer Portal</span>
               <ExternalLink className="w-4 h-4 text-slate-500" />
@@ -460,40 +523,40 @@ export const MerchantDashboard: React.FC = () => {
           )}
         </div>
 
-        {/* 3 Pillar Feature Cards (Matching Reference Screenshot) */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left" id="features">
-          <div className="protocol-card p-6 flex flex-col justify-between">
+        {/* 3 Pillar Feature Cards */}
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-5 text-left" id="features">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center mb-4 text-[#FF5500]">
-                <CreditCard className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center mb-3 text-[#0070BA]">
+                <CreditCard className="w-4 h-4" />
               </div>
-              <h3 className="text-base font-bold text-[#FF5500] mb-2">Any Supplier Method</h3>
+              <h3 className="text-sm font-bold text-slate-900 mb-1.5">Multi-Supplier Split Holds</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Works out of the box with PayPal pre-authorizations, multiple suppliers, and carrier logistics.
+                Single buyer authorization partitioned across distinct warehouse nodes. Independent split captures with zero re-authorization friction.
               </p>
             </div>
           </div>
 
-          <div className="protocol-card-highlight p-6 flex flex-col justify-between">
+          <div className="bg-white border border-[#0070BA]/30 rounded-xl p-5 shadow-xs hover:border-[#0070BA] transition-all flex flex-col justify-between ring-1 ring-[#0070BA]/10">
             <div>
-              <div className="w-10 h-10 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center mb-4 text-[#FF5500]">
-                <Link2 className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center mb-3 text-[#0070BA]">
+                <Link2 className="w-4 h-4" />
               </div>
-              <h3 className="text-base font-bold text-[#FF5500] mb-2">Cryptographic Chain</h3>
+              <h3 className="text-sm font-bold text-slate-900 mb-1.5">Cryptographic Audit Chain</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Tamper-evident SHA-256 state chain. Every delay or line-item swap is bound in buyer consent blocks.
+                Tamper-evident SHA-256 state chain. Every line-item swap or port delay is cryptographically bound in immutable buyer consent blocks.
               </p>
             </div>
           </div>
 
-          <div className="protocol-card p-6 flex flex-col justify-between">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between">
             <div>
-              <div className="w-10 h-10 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center mb-4 text-[#FF5500]">
-                <Cpu className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center mb-3 text-[#0070BA]">
+                <Cpu className="w-4 h-4" />
               </div>
-              <h3 className="text-base font-bold text-[#FF5500] mb-2">AI-Ready & Safe</h3>
+              <h3 className="text-sm font-bold text-slate-900 mb-1.5">Deterministic Risk Firewall</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                100% Python arithmetic firewall. Zero AI hallucinated balances, currency overrides, or unverified charges.
+                100% Python arithmetic firewall. Zero AI hallucinated balances, currency overrides, or unverified ledger state mutations.
               </p>
             </div>
           </div>
@@ -596,152 +659,177 @@ export const MerchantDashboard: React.FC = () => {
           {/* ── RIGHT 35%: CONTEXTUAL INSPECTOR & ACTION DOCK (Cols 9-12) ─ */}
           <div className="lg:col-span-4 space-y-4">
             
-            {/* 1. Selected Order Telemetry Card */}
+            {/* Contextual Inspector Container with Segmented Tabs */}
             <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
               <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-slate-900">
-                      ORDER #{currentOrder?.id || selectedOrderId || '—'}
-                    </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${
-                      currentOrder?.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                      currentOrder?.status === 'PARTIALLY_CAPTURED' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
-                      'bg-blue-100 text-blue-800 border border-blue-300'
-                    }`}>
-                      {currentOrder?.status || 'SELECT ORDER'}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-500 block truncate mt-0.5" title={currentOrder?.paypal_order_id}>
-                    PayPal ID: {currentOrder?.paypal_order_id || '—'}
-                  </span>
+                {/* Segmented Control */}
+                <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-100 border border-slate-200 text-xs font-mono">
+                  <button
+                    onClick={() => setInspectorTab('hold')}
+                    className={`px-3 py-1 rounded-md transition-all font-semibold ${
+                      inspectorTab === 'hold'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Hold & Settle
+                  </button>
+                  <button
+                    onClick={() => setInspectorTab('notice')}
+                    className={`px-3 py-1 rounded-md transition-all font-semibold ${
+                      inspectorTab === 'notice'
+                        ? 'bg-white text-[#0070BA] shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    AI Notice Ingestion
+                  </button>
                 </div>
 
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-400 uppercase block">Hold Expiry</span>
-                  <span className="text-xs font-mono font-semibold text-slate-700">
-                    {currentOrder?.auth_days_remaining != null ? `~${currentOrder.auth_days_remaining}d remaining` : '29d Window'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Proportional Split Hold Bar */}
-              <SplitHoldBar
-                totalAmount={currentOrder?.total_amount || 90.0}
-                capturedAmount={currentOrder?.captured_amount || 0.0}
-                heldAmount={currentOrder?.held_amount || 0.0}
-                status={currentOrder?.status || 'AUTHORIZED'}
-              />
-
-              {/* Order Line Items Summary */}
-              {currentOrder?.items && currentOrder.items.length > 0 && (
-                <div className="pt-3 border-t border-slate-200 space-y-2">
-                  <span className="text-[10px] font-mono uppercase text-slate-500 block">
-                    Fulfillment Line Items ({currentOrder.items.length}):
-                  </span>
-                  <div className="space-y-1.5">
-                    {currentOrder.items.map((it: any) => (
-                      <div key={it.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs font-mono">
-                        <div className="truncate pr-2">
-                          <span className="font-semibold text-slate-800 block truncate">{it.name}</span>
-                          <span className="text-[10px] text-slate-500">{it.sku}</span>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="font-bold text-slate-900 tabular-nums block">${it.amount.toFixed(2)}</span>
-                          <span className={`text-[9px] uppercase font-bold ${
-                            it.status === 'SHIPPED' ? 'text-emerald-700' :
-                            it.status === 'DELAYED' ? 'text-amber-700' : 'text-slate-500'
-                          }`}>
-                            {it.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Scenario Action Dock */}
-              <div className="pt-3 border-t border-slate-200 space-y-2.5">
-                <span className="text-[10px] font-mono uppercase text-slate-500 block">
-                  1-Click Execution Dock:
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${
+                  currentOrder?.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+                  currentOrder?.status === 'PARTIALLY_CAPTURED' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                  'bg-blue-50 text-[#0070BA] border border-blue-200'
+                }`}>
+                  {currentOrder?.status || 'AUTHORIZED'}
                 </span>
-                
-                <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                  {/* Step 1: Create Cart */}
-                  <button
-                    onClick={handleCreateDemoOrder}
-                    disabled={loading}
-                    className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-semibold transition flex items-center justify-center gap-1.5 text-xs shadow-xs"
-                  >
-                    <Package className="w-3.5 h-3.5 text-[#0070BA]" />
-                    <span>+ Create $90 Cart</span>
-                  </button>
-
-                  {/* Step 2: Authorize */}
-                  <button
-                    onClick={handleAuthorize}
-                    disabled={loading || currentOrder?.status !== 'CREATED'}
-                    className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-semibold transition flex items-center justify-center gap-1.5 text-xs shadow-xs disabled:opacity-40"
-                  >
-                    <Lock className="w-3.5 h-3.5 text-[#0070BA]" />
-                    <span>Authorize Hold</span>
-                  </button>
-
-                  {/* Step 3: Partial Ship */}
-                  <button
-                    onClick={handleShipPartial}
-                    disabled={loading || currentOrder?.status !== 'AUTHORIZED'}
-                    className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-semibold transition flex items-center justify-center gap-1.5 text-xs shadow-xs disabled:opacity-40"
-                  >
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Ship Partial ($60)</span>
-                  </button>
-
-                  {/* Step 4: Fulfill Delayed / Swap */}
-                  <button
-                    onClick={handleFulfillDelayed}
-                    disabled={loading || currentOrder?.status !== 'PARTIALLY_CAPTURED'}
-                    className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-semibold transition flex items-center justify-center gap-1.5 text-xs shadow-xs disabled:opacity-40"
-                  >
-                    <Repeat className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Fulfill / Swap ($28)</span>
-                  </button>
-                </div>
-
-                {/* Secondary Actions */}
-                <div className="flex items-center gap-2 pt-1">
-                  <button
-                    onClick={handleAssessRisk}
-                    disabled={assessingRisk || !selectedOrderId}
-                    className="flex-1 py-1.5 px-3 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-mono flex items-center justify-center gap-1.5 transition"
-                  >
-                    <Cpu className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>{assessingRisk ? 'Scoring...' : 'Evaluate Risk'}</span>
-                  </button>
-
-                  <a
-                    href={`/api/orders/${selectedOrderId || 1}/evidence/download`}
-                    download
-                    className="py-1.5 px-3 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 text-xs font-mono flex items-center justify-center gap-1.5 transition"
-                  >
-                    <Download className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Evidence JSON</span>
-                  </a>
-                </div>
               </div>
-            </div>
 
-            {/* 2. Embedded AI Supplier Notice Ingestion Console */}
-            <NoticeParserCard
-              orderId={selectedOrderId || 1}
-              onNoticeParsed={() => {
-                if (selectedOrderId) {
-                  fetchOrderDetails(selectedOrderId);
-                  fetchRiskAssessments(selectedOrderId);
-                }
-              }}
-            />
+              {/* Tab 1: Hold Telemetry & 1-Click Execution */}
+              {inspectorTab === 'hold' ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <div>
+                      <span className="font-bold text-slate-900">ORDER #{currentOrder?.id || selectedOrderId || 1}</span>
+                      <span className="text-[10px] text-slate-500 block truncate max-w-[200px]" title={currentOrder?.paypal_order_id}>
+                        {currentOrder?.paypal_order_id || '81R116453E1577428-DEMO1'}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-400 uppercase block">Hold Window</span>
+                      <span className="font-semibold text-slate-700">
+                        {currentOrder?.auth_days_remaining != null ? `~${currentOrder.auth_days_remaining}d remaining` : '29d Active'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Proportional Split Hold Bar */}
+                  <SplitHoldBar
+                    totalAmount={currentOrder?.total_amount || 90.0}
+                    capturedAmount={currentOrder?.captured_amount || 0.0}
+                    heldAmount={currentOrder?.held_amount || 0.0}
+                    status={currentOrder?.status || 'AUTHORIZED'}
+                  />
+
+                  {/* Order Line Items Summary */}
+                  <div className="pt-2 border-t border-slate-200 space-y-2">
+                    <span className="text-[10px] font-mono uppercase text-slate-500 block">
+                      Fulfillment Line Items ({(currentOrder?.items || DEFAULT_ORDER_ITEMS).length}):
+                    </span>
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-0.5">
+                      {(currentOrder?.items || DEFAULT_ORDER_ITEMS).map((it: any) => (
+                        <div key={it.id || it.sku} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs font-mono">
+                          <div className="truncate pr-2">
+                            <span className="font-semibold text-slate-800 block truncate">{it.name}</span>
+                            <span className="text-[10px] text-slate-500">{it.sku}</span>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="font-bold text-slate-900 tabular-nums block">${it.amount.toFixed(2)}</span>
+                            <span className={`text-[9px] uppercase font-bold ${
+                              it.status === 'SHIPPED' ? 'text-emerald-700' :
+                              it.status === 'DELAYED' ? 'text-amber-700' : 'text-slate-500'
+                            }`}>
+                              {it.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Scenario Action Dock */}
+                  <div className="pt-3 border-t border-slate-200 space-y-2.5">
+                    <span className="text-[10px] font-mono uppercase text-slate-500 block">
+                      1-Click Execution Dock:
+                    </span>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                      {/* Step 1: Create Cart */}
+                      <button
+                        onClick={handleCreateDemoOrder}
+                        disabled={loading}
+                        className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-semibold transition flex items-center justify-center gap-1.5 text-xs shadow-xs cursor-pointer"
+                      >
+                        <Package className="w-3.5 h-3.5 text-[#0070BA]" />
+                        <span>+ New $90 Hold</span>
+                      </button>
+
+                      {/* Step 2: Authorize */}
+                      <button
+                        onClick={handleAuthorize}
+                        disabled={loading || currentOrder?.status !== 'CREATED'}
+                        className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-semibold transition flex items-center justify-center gap-1.5 text-xs shadow-xs disabled:opacity-40 cursor-pointer"
+                      >
+                        <Lock className="w-3.5 h-3.5 text-[#0070BA]" />
+                        <span>Lock Auth Hold</span>
+                      </button>
+
+                      {/* Step 3: Partial Ship */}
+                      <button
+                        onClick={handleShipPartial}
+                        disabled={loading || currentOrder?.status !== 'AUTHORIZED'}
+                        className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-semibold transition flex items-center justify-center gap-1.5 text-xs shadow-xs disabled:opacity-40 cursor-pointer"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Ship Partial ($60)</span>
+                      </button>
+
+                      {/* Step 4: Fulfill Delayed / Swap */}
+                      <button
+                        onClick={handleFulfillDelayed}
+                        disabled={loading || currentOrder?.status !== 'PARTIALLY_CAPTURED'}
+                        className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-semibold transition flex items-center justify-center gap-1.5 text-xs shadow-xs disabled:opacity-40 cursor-pointer"
+                      >
+                        <Repeat className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Fulfill Delayed ($28)</span>
+                      </button>
+                    </div>
+
+                    {/* Secondary Actions */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={handleAssessRisk}
+                        disabled={assessingRisk || !selectedOrderId}
+                        className="flex-1 py-1.5 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-mono flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      >
+                        <Cpu className="w-3.5 h-3.5 text-[#0070BA]" />
+                        <span>{assessingRisk ? 'Scoring...' : 'Evaluate Risk'}</span>
+                      </button>
+
+                      <a
+                        href={`/api/orders/${selectedOrderId || 1}/evidence/download`}
+                        download
+                        className="py-1.5 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 text-xs font-mono flex items-center justify-center gap-1.5 transition"
+                      >
+                        <Download className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Evidence JSON</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Tab 2: Embedded AI Notice Ingestion */
+                <NoticeParserCard
+                  orderId={selectedOrderId || 1}
+                  onNoticeParsed={() => {
+                    if (selectedOrderId) {
+                      fetchOrderDetails(selectedOrderId);
+                      fetchRiskAssessments(selectedOrderId);
+                    }
+                  }}
+                />
+              )}
+            </div>
 
           </div>
         </div>
@@ -875,14 +963,14 @@ export const MerchantDashboard: React.FC = () => {
                     disabled={simulatingChaos || (currentOrder?.consents?.length || 0) === 0}
                     className="px-3.5 py-1.5 text-xs font-mono font-semibold rounded-full bg-rose-50 border border-rose-300 text-rose-700 hover:bg-rose-100 transition disabled:opacity-40"
                   >
-                    ⚡ Simulate Tamper
+                    Simulate Tamper
                   </button>
                   <button
                     onClick={handleSimulateChainBreak}
                     disabled={simulatingChaos || (currentOrder?.consents?.length || 0) < 2}
                     className="px-3.5 py-1.5 text-xs font-mono font-semibold rounded-full bg-amber-50 border border-amber-300 text-amber-800 hover:bg-amber-100 transition disabled:opacity-40"
                   >
-                    🔗 Simulate Chain Break
+                    Simulate Chain Break
                   </button>
                   <button
                     onClick={handleVerifyEvidence}
@@ -896,7 +984,7 @@ export const MerchantDashboard: React.FC = () => {
                       onClick={() => { setChaosResult(null); handleVerifyEvidence(); }}
                       className="px-3.5 py-1.5 text-xs font-mono font-semibold rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 hover:bg-emerald-100 transition"
                     >
-                      🔄 Restore Chain
+                      Restore Chain
                     </button>
                   )}
                 </div>

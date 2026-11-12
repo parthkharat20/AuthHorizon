@@ -195,7 +195,7 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
       <button
         onClick={handleParse}
         disabled={loading}
-        className="w-full py-2 px-4 rounded-full bg-[#FF5500] hover:bg-[#ea4c00] text-white text-[13px] font-medium flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-50"
+        className="w-full py-2 px-4 rounded-xl bg-[#0070BA] hover:bg-[#005ea6] text-white text-[13px] font-semibold flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
       >
         {loading ? (
           <>

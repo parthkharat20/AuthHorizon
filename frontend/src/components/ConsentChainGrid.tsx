@@ -31,14 +31,14 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
   const columnDefs = useMemo<(ColDef<ConsentChainItem> | ColGroupDef<ConsentChainItem>)[]>(() => [
     // Column Group 1: Buyer Action
     {
-      headerName: '👤 Buyer Consent Selection',
+      headerName: 'Buyer Consent Selection',
       children: [
         {
           field: 'id',
           headerName: '#',
           width: 55,
           pinned: 'left', // Column Pinning (left)
-          cellClass: 'font-mono text-xs font-bold text-slate-400',
+          cellClass: 'font-mono text-xs font-bold text-slate-500',
         },
         {
           field: 'choice',
@@ -46,10 +46,10 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           width: 120,
           cellRenderer: (p: ICellRendererParams<ConsentChainItem>) => {
             const choice = p.value || '';
-            let badgeColor = 'bg-slate-700 text-slate-300 border-slate-600';
-            if (choice === 'WAIT') badgeColor = 'bg-blue-500/20 text-blue-300 border-blue-500/40';
-            if (choice === 'SWAP') badgeColor = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
-            if (choice === 'CANCEL') badgeColor = 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+            let badgeColor = 'bg-slate-100 text-slate-700 border-slate-200';
+            if (choice === 'WAIT') badgeColor = 'bg-blue-50 text-[#0070BA] border-blue-200';
+            if (choice === 'SWAP') badgeColor = 'bg-amber-50 text-amber-800 border-amber-200';
+            if (choice === 'CANCEL') badgeColor = 'bg-rose-50 text-rose-800 border-rose-200';
 
             return (
               <div className="flex items-center h-full">
@@ -65,8 +65,8 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           headerName: 'Locale',
           width: 80,
           cellRenderer: (p: ICellRendererParams<ConsentChainItem>) => (
-            <div className="flex items-center gap-1 h-full font-mono text-[11px] text-slate-300 uppercase">
-              <Globe2 className="w-3 h-3 text-cyan-400" />
+            <div className="flex items-center gap-1 h-full font-mono text-[11px] text-slate-700 uppercase">
+              <Globe2 className="w-3 h-3 text-[#0070BA]" />
               {p.value || 'EN'}
             </div>
           ),
@@ -76,7 +76,7 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
 
     // Column Group 2: Cryptographic Hash Linkage
     {
-      headerName: '🔗 Cryptographic Hash Linkage',
+      headerName: 'Cryptographic Hash Linkage (SHA-256)',
       children: [
         {
           field: 'consent_hash',
@@ -85,15 +85,15 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           minWidth: 190,
           headerComponent: HashHeaderComponent, // Custom Header Component
           cellRenderer: (p: ICellRendererParams<ConsentChainItem>) => (
-            <div className="flex items-center gap-1 h-full font-mono text-[10px] text-emerald-400/90 truncate">
+            <div className="flex items-center gap-1 h-full font-mono text-[10px] text-emerald-700 font-semibold truncate">
               <span className="truncate" title={p.value}>{p.value}</span>
               {p.value && (
                 <button
                   onClick={() => navigator.clipboard?.writeText(p.value)}
                   title="Copy Consent Hash"
-                  className="p-0.5 hover:text-emerald-200 transition-colors"
+                  className="p-0.5 hover:text-emerald-950 transition-colors"
                 >
-                  <Copy className="w-2.5 h-2.5 text-slate-500 hover:text-slate-300" />
+                  <Copy className="w-2.5 h-2.5 text-slate-400 hover:text-slate-600" />
                 </button>
               )}
             </div>
@@ -107,9 +107,9 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           cellRenderer: (p: ICellRendererParams<ConsentChainItem>) => {
             const isGenesis = p.value?.startsWith('00000000');
             return (
-              <div className="flex items-center gap-1 h-full font-mono text-[10px] text-slate-400 truncate">
-                <Link2 className="w-2.5 h-2.5 text-indigo-400 shrink-0" />
-                <span className="truncate font-semibold text-indigo-300" title={p.value}>
+              <div className="flex items-center gap-1 h-full font-mono text-[10px] text-slate-500 truncate">
+                <Link2 className="w-2.5 h-2.5 text-indigo-500 shrink-0" />
+                <span className={`truncate font-semibold ${isGenesis ? 'text-indigo-700 font-bold' : 'text-slate-600'}`} title={p.value}>
                   {isGenesis ? 'GENESIS_HASH (0000...)' : p.value}
                 </span>
               </div>
@@ -121,7 +121,7 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
 
     // Column Group 3: Attestation & Verification
     {
-      headerName: '📜 Attestation & Verification',
+      headerName: 'Attestation & Verification',
       children: [
         {
           field: 'displayed_text',
@@ -129,7 +129,7 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           flex: 2,
           minWidth: 200,
           cellRenderer: (p: ICellRendererParams<ConsentChainItem>) => (
-            <span className="text-[11px] text-slate-300 truncate block h-full flex items-center" title={p.value}>
+            <span className="text-[11px] text-slate-700 truncate block h-full flex items-center" title={p.value}>
               {p.value}
             </span>
           ),
@@ -140,8 +140,8 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
           pinned: 'right', // Column Pinning (right)
           cellRenderer: () => (
             <div className="flex items-center h-full">
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-emerald-600" />
                 Intact ✓
               </span>
             </div>
@@ -163,22 +163,22 @@ export const ConsentChainGrid: React.FC<ConsentChainGridProps> = ({ consents }) 
       {/* Search and Export Toolbar */}
       <div className="flex items-center justify-between gap-2 px-1">
         <div className="relative flex-1 max-w-xs">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-2 text-[#86868b] pointer-events-none" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-2 text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={quickFilter}
             onChange={(e) => setQuickFilter(e.target.value)}
             placeholder="Search consent hashes..."
-            className="w-full pl-8 pr-3 py-1 rounded-full bg-[#121214] border border-[#2c2c2e] text-[11px] text-[#f5f5f7] placeholder:text-[#86868b] focus:outline-none focus:border-[#0071e3] font-mono"
+            className="w-full pl-8 pr-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0070BA] font-mono"
           />
         </div>
 
         <button
           onClick={handleExportCsv}
-          className="px-3 py-1 rounded-full bg-[#1c1c1e] hover:bg-[#232326] text-[#a1a1a6] hover:text-white border border-[#2c2c2e] text-[11px] font-medium flex items-center gap-1 transition-all shrink-0"
+          className="px-3 py-1 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-medium flex items-center gap-1 transition-all shrink-0"
           title="Export consent audit chain to CSV"
         >
-          <Download className="w-3 h-3 text-[#86868b]" />
+          <Download className="w-3 h-3 text-slate-500" />
           <span>Export Chain CSV</span>
         </button>
       </div>

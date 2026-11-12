@@ -30,7 +30,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
   const columnDefs = useMemo<(ColDef<SupplierNode> | ColGroupDef<SupplierNode>)[]>(() => [
     // Column Group 1: Node Identification
     {
-      headerName: '🏭 Node Identification',
+      headerName: 'Supplier Node Identification',
       children: [
         {
           headerCheckboxSelection: true,
@@ -48,8 +48,8 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           rowDrag: true, // AG Grid Community Row Drag & Drop
           cellRenderer: (p: ICellRendererParams<SupplierNode>) => (
             <div className="flex items-center gap-1.5 h-full">
-              <Server className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-              <span className="font-mono text-xs font-bold text-orange-300">
+              <Server className="w-3.5 h-3.5 text-[#0070BA] shrink-0" />
+              <span className="font-mono text-xs font-bold text-[#0070BA]">
                 {p.value}
               </span>
             </div>
@@ -62,7 +62,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           minWidth: 160,
           cellRenderer: (p: ICellRendererParams<SupplierNode>) => (
             <div className="flex flex-col justify-center h-full py-0.5">
-              <span className="text-slate-100 font-semibold text-xs truncate">{p.value}</span>
+              <span className="text-slate-900 font-semibold text-xs truncate">{p.value}</span>
             </div>
           ),
         },
@@ -73,7 +73,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           cellRenderer: (p: ICellRendererParams<SupplierNode>) => {
             const flag = p.value === 'US' ? '🇺🇸' : p.value === 'DE' ? '🇩🇪' : p.value === 'CN' ? '🇨🇳' : '🌐';
             return (
-              <div className="flex items-center gap-1 h-full font-mono text-xs text-slate-300">
+              <div className="flex items-center gap-1 h-full font-mono text-xs text-slate-600">
                 <span>{flag}</span>
                 <span>{p.value}</span>
               </div>
@@ -85,7 +85,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
 
     // Column Group 2: Telemetry & In-Cell Simulation
     {
-      headerName: '📊 Telemetry & In-Cell Simulation',
+      headerName: 'Fulfillment Telemetry & Risk',
       children: [
         {
           field: 'on_time_rate',
@@ -93,7 +93,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           width: 115,
           cellRenderer: (p: ICellRendererParams<SupplierNode>) => {
             const pct = Math.round((p.value || 0) * 100);
-            const color = pct >= 90 ? 'text-emerald-400' : pct >= 75 ? 'text-amber-400' : 'text-rose-400';
+            const color = pct >= 90 ? 'text-emerald-700' : pct >= 75 ? 'text-amber-700' : 'text-rose-700';
             return (
               <div className="flex items-center justify-end h-full font-mono text-xs font-bold">
                 <span className={color}>{pct}%</span>
@@ -109,10 +109,10 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
             const rate = p.data?.on_time_rate || 0;
             const pct = Math.round(rate * 100);
             const barBg = pct >= 90 ? 'bg-emerald-500' : pct >= 75 ? 'bg-amber-500' : 'bg-rose-500';
-            const textColor = pct >= 90 ? 'text-emerald-400' : pct >= 75 ? 'text-amber-400' : 'text-rose-400';
+            const textColor = pct >= 90 ? 'text-emerald-700' : pct >= 75 ? 'text-amber-700' : 'text-rose-700';
             return (
               <div className="flex items-center gap-2 h-full w-full pr-1">
-                <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden flex">
+                <div className="flex-1 h-2 bg-slate-100 border border-slate-200 rounded-full overflow-hidden flex">
                   <div
                     style={{ width: `${pct}%` }}
                     className={`h-full ${barBg} rounded-full transition-all duration-300`}
@@ -144,19 +144,19 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           editable: true,
           cellEditor: 'agNumberCellEditor',
           cellEditorParams: { min: 0, max: 1, step: 0.05 },
-          cellClass: 'cursor-pointer hover:bg-slate-800/80 transition-colors',
+          cellClass: 'cursor-pointer hover:bg-slate-100 transition-colors',
           cellRenderer: (p: ICellRendererParams<SupplierNode>) => {
             const pct = Math.round((p.value || 0) * 100);
             return (
               <div className="flex items-center gap-1.5 h-full" title="Double click to edit and simulate what-if risk">
-                <div className="w-12 h-1.5 bg-slate-800 rounded-full overflow-hidden shrink-0">
+                <div className="w-12 h-1.5 bg-slate-100 border border-slate-200 rounded-full overflow-hidden shrink-0">
                   <div
                     className={`h-full ${pct > 50 ? 'bg-rose-500' : pct > 20 ? 'bg-amber-500' : 'bg-emerald-500'}`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <span className="font-mono text-[10px] text-slate-300 font-bold">{pct}%</span>
-                <Edit3 className="w-2.5 h-2.5 text-cyan-400/70 ml-auto shrink-0" />
+                <span className="font-mono text-[10px] text-slate-700 font-bold">{pct}%</span>
+                <Edit3 className="w-2.5 h-2.5 text-slate-400 ml-auto shrink-0" />
               </div>
             );
           },
@@ -167,7 +167,7 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
           width: 105,
           cellRenderer: (p: ICellRendererParams<SupplierNode>) => (
             <div className="flex items-center justify-center h-full">
-              <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-slate-300 border border-slate-700">
+              <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-100 text-slate-700 border border-slate-200">
                 {p.value} SKU{p.value === 1 ? '' : 's'}
               </span>
             </div>
@@ -184,37 +184,37 @@ export const SupplierRiskGrid: React.FC<SupplierRiskGridProps> = ({ suppliers: i
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-2 flex-1 max-w-sm">
           <div className="relative flex-1">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-2 text-[#86868b] pointer-events-none" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2 text-slate-400 pointer-events-none" />
             <input
               type="text"
               value={quickFilter}
               onChange={(e) => setQuickFilter(e.target.value)}
               placeholder="Search supplier nodes & regions..."
-              className="w-full pl-8 pr-3 py-1 rounded-full bg-[#121214] border border-[#2c2c2e] text-[11px] text-[#f5f5f7] placeholder:text-[#86868b] focus:outline-none focus:border-[#0071e3] font-mono"
+              className="w-full pl-8 pr-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0070BA] font-mono"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           {simulationNotice && (
-            <span className="text-[11px] font-mono text-[#2997ff] bg-[#0071e3]/15 border border-[#0071e3]/30 px-3 py-0.5 rounded-full animate-pulse">
+            <span className="text-[11px] font-mono text-[#0070BA] bg-blue-50 border border-blue-200 px-3 py-0.5 rounded-full animate-pulse">
               {simulationNotice}
             </span>
           )}
 
           {selectedCount > 0 && (
-            <span className="text-[11px] font-mono text-[#ff9f0a] bg-[#ff9f0a]/15 border border-[#ff9f0a]/30 px-3 py-0.5 rounded-full flex items-center gap-1">
-              <CheckSquare className="w-3 h-3 text-[#ff9f0a]" />
+            <span className="text-[11px] font-mono text-amber-800 bg-amber-50 border border-amber-200 px-3 py-0.5 rounded-full flex items-center gap-1">
+              <CheckSquare className="w-3 h-3 text-amber-600" />
               {selectedCount} Selected
             </span>
           )}
 
           <button
             onClick={handleExportCsv}
-            className="px-3 py-1 rounded-full bg-[#1c1c1e] hover:bg-[#232326] text-[#a1a1a6] hover:text-white border border-[#2c2c2e] text-[11px] font-medium flex items-center gap-1 transition-all shrink-0"
+            className="px-3 py-1 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-medium flex items-center gap-1 transition-all shrink-0"
             title="Export supplier nodes to CSV"
           >
-            <Download className="w-3 h-3 text-[#86868b]" />
+            <Download className="w-3 h-3 text-slate-500" />
             <span>Export CSV</span>
           </button>
         </div>

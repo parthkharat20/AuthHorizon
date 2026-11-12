@@ -1,27 +1,44 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg-root: #090B10;
-  --color-surface-elevated: #111622;
-  --color-surface-secondary: #0D111A;
-  --color-border-hairline: #1E2638;
-  --color-text-primary: #F1F5F9;
+  --color-apple-blue: #0071e3;
+  --color-apple-blue-hover: #0077ed;
+  --color-apple-blue-dark: #2997ff;
   --color-paypal-cobalt: #0070BA;
   --color-paypal-deep: #003087;
-  --color-status-settled: #10B981;
-  --color-status-held: #F59E0B;
-  --color-status-alert: #EF4444;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Apple Light Tokens */
+  --color-apple-canvas: #f5f5f7;
+  --color-apple-card: #ffffff;
+  --color-apple-ink: #1d1d1f;
+  --color-apple-muted: #86868b;
+  --color-apple-hairline: #e5e5ea;
+
+  /* Apple Pro Dark Tokens */
+  --color-apple-dark-bg: #000000;
+  --color-apple-dark-surface: #161618;
+  --color-apple-dark-elevated: #1c1c1e;
+  --color-apple-dark-border: #2c2c2e;
+  --color-apple-dark-text: #f5f5f7;
+  --color-apple-dark-muted: #a1a1a6;
+
+  /* Semantic Status */
+  --color-status-success: #34c759;
+  --color-status-warning: #ff9f0a;
+  --color-status-error: #ff453a;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, Monaco, Consolas, monospace;
 }
 
 /* ── Base ──────────────────────────────────────── */
 body {
-  background-color: #090B10;
-  color: #F1F5F9;
+  background-color: #000000;
+  color: #f5f5f7;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
 }
 
 /* ── Tabular figures for financial numbers ────────── */
@@ -30,46 +47,61 @@ body {
   font-feature-settings: 'tnum' 1;
 }
 
-/* ── AG Grid Dark Theme Overrides (v33 Quartz Dark) ─────────── */
+/* ── Apple Frosted Glass Navbars ───────────────── */
+.apple-frosted-dark {
+  background: rgba(18, 18, 20, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.apple-frosted-light {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* ── AG Grid Apple Pro Dark Styling ─────────────── */
 .ag-theme-quartz-dark {
-  --ag-background-color: #0D111A;
-  --ag-header-background-color: #111622;
-  --ag-header-foreground-color: #94A3B8;
-  --ag-header-cell-hover-background-color: #161D2E;
-  --ag-row-hover-color: rgba(0, 112, 186, 0.08);
-  --ag-selected-row-background-color: rgba(0, 112, 186, 0.16);
-  --ag-range-selection-border-color: #0070BA;
-  --ag-border-color: #1E2638;
-  --ag-row-border-color: #151C2C;
-  --ag-odd-row-background-color: #0A0E17;
-  --ag-foreground-color: #F1F5F9;
-  --ag-font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --ag-background-color: #161618;
+  --ag-header-background-color: #1c1c1e;
+  --ag-header-foreground-color: #a1a1a6;
+  --ag-header-cell-hover-background-color: #242426;
+  --ag-row-hover-color: rgba(41, 151, 255, 0.07);
+  --ag-selected-row-background-color: rgba(41, 151, 255, 0.14);
+  --ag-range-selection-border-color: #2997ff;
+  --ag-border-color: #2c2c2e;
+  --ag-row-border-color: #232326;
+  --ag-odd-row-background-color: #131315;
+  --ag-foreground-color: #f5f5f7;
+  --ag-font-family: "JetBrains Mono", "SF Mono", monospace;
   --ag-font-size: 12px;
   --ag-cell-horizontal-padding: 12px;
-  --ag-pinned-row-background-color: #131A29;
-  border: 1px solid #1E2638;
-  border-radius: 6px;
+  --ag-pinned-row-background-color: #1f1f22;
+  border: 1px solid #2c2c2e;
+  border-radius: 12px;
   overflow: hidden;
 }
 
 .ag-theme-alpine-dark {
-  --ag-background-color: #0D111A;
-  --ag-header-background-color: #111622;
-  --ag-header-foreground-color: #94A3B8;
-  --ag-row-hover-color: rgba(0, 112, 186, 0.08);
-  --ag-selected-row-background-color: rgba(0, 112, 186, 0.16);
-  --ag-border-color: #1E2638;
-  --ag-row-border-color: #151C2C;
-  --ag-foreground-color: #F1F5F9;
-  --ag-font-family: "Inter", sans-serif;
+  --ag-background-color: #161618;
+  --ag-header-background-color: #1c1c1e;
+  --ag-header-foreground-color: #a1a1a6;
+  --ag-row-hover-color: rgba(41, 151, 255, 0.07);
+  --ag-selected-row-background-color: rgba(41, 151, 255, 0.14);
+  --ag-border-color: #2c2c2e;
+  --ag-row-border-color: #232326;
+  --ag-foreground-color: #f5f5f7;
+  --ag-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
   --ag-font-size: 12px;
-  border: 1px solid #1E2638;
-  border-radius: 6px;
+  border: 1px solid #2c2c2e;
+  border-radius: 12px;
   overflow: hidden;
 }
 
 /* ── Minimalist Scrollbar ─────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #090B10; }
-::-webkit-scrollbar-thumb { background: #1E2638; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #2A364F; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2c2c2e; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a3e; }

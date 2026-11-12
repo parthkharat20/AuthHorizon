@@ -109,32 +109,32 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
   };
 
   return (
-    <div className="bg-[#111622] border border-[#1E2638] rounded-md p-3.5 space-y-3">
+    <div className="bg-[#161618] border border-[#2c2c2e] rounded-2xl p-4 space-y-3.5 shadow-xs">
       {/* Title Bar */}
-      <div className="flex items-center justify-between pb-2 border-b border-[#1E2638]">
-        <div className="flex items-center gap-1.5">
-          <FileText className="w-3.5 h-3.5 text-[#0070BA]" />
-          <h4 className="text-xs font-semibold text-[#F1F5F9]">AI Supplier Ingestion Engine</h4>
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#0D111A] text-slate-400 border border-[#1E2638]">
+      <div className="flex items-center justify-between pb-2.5 border-b border-[#2c2c2e]">
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-[#2997ff]" />
+          <h4 className="text-[13px] font-semibold text-[#f5f5f7]">AI Notice Ingestion Engine</h4>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1c1c1e] text-[#a1a1a6] border border-[#2c2c2e]">
             Order #{orderId}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleOpenEval}
-            className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-[#10B981]/10 text-emerald-300 border border-[#10B981]/30 hover:bg-[#10B981]/20 transition-colors flex items-center gap-1"
+            className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-[#34c759]/10 text-emerald-300 border border-[#34c759]/30 hover:bg-[#34c759]/20 transition-colors flex items-center gap-1"
             title="Inspect 20-notice multilingual & adversarial benchmark results"
           >
-            <ShieldCheck className="w-3 h-3 text-emerald-400" />
+            <ShieldCheck className="w-3 h-3 text-[#34c759]" />
             <span>Eval (20/20 ✓)</span>
           </button>
-          <span className="text-[10px] font-mono text-slate-500">5-Layer Gate Active</span>
+          <span className="text-[10px] font-mono text-[#86868b]">5-Layer Defense</span>
         </div>
       </div>
 
       {/* Fixture Selector Tabs */}
       <div>
-        <label className="block text-[10px] font-mono uppercase tracking-wider text-slate-400 mb-1">
+        <label className="block text-[10px] font-mono uppercase tracking-wider text-[#86868b] mb-1.5">
           Preset Ingestion Stream:
         </label>
         <div className="grid grid-cols-2 gap-1.5">
@@ -142,10 +142,10 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
             <button
               key={key}
               onClick={() => handleSelectFixture(key)}
-              className={`px-2 py-1 rounded text-[11px] text-left transition-all border font-mono truncate ${
+              className={`px-2.5 py-1.5 rounded-xl text-[11px] text-left transition-all border font-mono truncate ${
                 selectedFixture === key
-                  ? 'bg-[#0070BA]/20 border-[#0070BA] text-blue-200 font-semibold'
-                  : 'bg-[#0D111A] border-[#1E2638] text-slate-400 hover:text-slate-200 hover:bg-[#141B29]'
+                  ? 'bg-[#0071e3]/20 border-[#0071e3] text-blue-200 font-semibold'
+                  : 'bg-[#1c1c1e] border-[#2c2c2e] text-[#a1a1a6] hover:text-[#f5f5f7] hover:bg-[#232326]'
               }`}
             >
               {item.title}
@@ -161,13 +161,13 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
           value={rawText || fixtures[selectedFixture]?.text}
           onChange={(e) => setRawText(e.target.value)}
           placeholder="Paste supplier email or raw unstructured notice..."
-          className="w-full bg-[#0D111A] border border-[#1E2638] rounded p-2 text-[11px] font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#0070BA] resize-none"
+          className="w-full bg-[#121214] border border-[#2c2c2e] rounded-xl p-2.5 text-[11px] font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#0071e3] resize-none"
         />
       </div>
 
       {/* Target Buyer Language Selector */}
       <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Locale:</span>
+        <span className="text-[10px] font-mono text-[#86868b] uppercase tracking-wider">Buyer Locale:</span>
         <div className="flex items-center gap-1">
           {[
             { id: 'en', label: '🇺🇸 EN' },
@@ -179,10 +179,10 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
               key={loc.id}
               type="button"
               onClick={() => setBuyerLocale(loc.id)}
-              className={`py-0.5 px-2 rounded text-[10px] font-mono transition-all border ${
+              className={`py-0.5 px-2 rounded-full text-[10px] font-mono transition-all border ${
                 buyerLocale === loc.id
-                  ? 'bg-[#0070BA]/30 border-[#0070BA] text-white font-bold'
-                  : 'bg-[#0D111A] border-[#1E2638] text-slate-400 hover:text-slate-200'
+                  ? 'bg-[#0071e3] border-[#0071e3] text-white font-bold'
+                  : 'bg-[#1c1c1e] border-[#2c2c2e] text-[#a1a1a6] hover:text-[#f5f5f7]'
               }`}
             >
               {loc.label}
@@ -191,29 +191,29 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
         </div>
       </div>
 
-      {/* Parse Action Button */}
+      {/* Parse Action Button (Apple Pill Button) */}
       <button
         onClick={handleParse}
         disabled={loading}
-        className="w-full py-1.5 px-3 rounded bg-[#0070BA] hover:bg-[#005ea6] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition-all disabled:opacity-50"
+        className="w-full py-2 px-4 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-white text-[13px] font-medium flex items-center justify-center gap-2 shadow-xs transition-all disabled:opacity-50"
       >
         {loading ? (
           <>
             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            <span className="font-mono">Executing 5-Gate Ingestion...</span>
+            <span className="font-mono">Evaluating 5-Gate Ingestion...</span>
           </>
         ) : (
           <>
             <Sparkles className="w-3.5 h-3.5 text-blue-200" />
-            <span>Ingest Notice & Evaluate Safety Gate</span>
+            <span>Ingest Notice & Evaluate Safety</span>
           </>
         )}
       </button>
 
       {/* Error or Safety Gate Rejection Alert */}
       {error && (
-        <div className="p-2.5 rounded bg-[#EF4444]/15 border border-[#EF4444]/40 text-xs text-rose-300 flex items-start gap-2">
-          <ShieldAlert className="w-3.5 h-3.5 text-[#EF4444] shrink-0 mt-0.5" />
+        <div className="p-3 rounded-xl bg-[#ff453a]/15 border border-[#ff453a]/40 text-xs text-rose-300 flex items-start gap-2">
+          <ShieldAlert className="w-3.5 h-3.5 text-[#ff453a] shrink-0 mt-0.5" />
           <div className="text-[11px] font-mono leading-tight">
             <strong className="block text-rose-200 font-bold">Safety Gate Intercepted:</strong>
             <span>{error}</span>
@@ -223,38 +223,38 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
 
       {/* Extraction Result Summary */}
       {extractionResult && (
-        <div className="p-2.5 rounded bg-[#0D111A] border border-[#1E2638] text-xs font-mono space-y-2">
-          <div className="flex items-center justify-between pb-1.5 border-b border-[#1E2638]">
+        <div className="p-3 rounded-xl bg-[#121214] border border-[#2c2c2e] text-xs font-mono space-y-2">
+          <div className="flex items-center justify-between pb-1.5 border-b border-[#2c2c2e]">
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
-              <span className="text-[11px] font-bold text-slate-200">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#34c759]" />
+              <span className="text-[11px] font-bold text-[#f5f5f7]">
                 {extractionResult.needs_review ? 'FLAGGED FOR MANUAL REVIEW' : 'GATE VERIFIED'}
               </span>
             </div>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#111622] text-slate-400 border border-[#1E2638]">
+            <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#1c1c1e] text-[#a1a1a6] border border-[#2c2c2e]">
               {extractionResult.provider_used?.toUpperCase() || 'GEMINI'}
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-300">
             <div>
-              <span className="text-slate-500 uppercase block">Extracted Item:</span>
-              <span className="font-bold text-[#F1F5F9]">{extractionResult.extraction?.item_identifier || '—'}</span>
+              <span className="text-[#86868b] uppercase block">Extracted Item:</span>
+              <span className="font-bold text-[#f5f5f7]">{extractionResult.extraction?.item_identifier || '—'}</span>
             </div>
             <div>
-              <span className="text-slate-500 uppercase block">Revised Ship Date:</span>
+              <span className="text-[#86868b] uppercase block">Revised Ship Date:</span>
               <span className="font-bold text-amber-300">{extractionResult.extraction?.new_ship_date || '—'}</span>
             </div>
             <div className="col-span-2">
-              <span className="text-slate-500 uppercase block">Reason:</span>
+              <span className="text-[#86868b] uppercase block">Reason:</span>
               <span className="text-slate-300 italic">"{extractionResult.extraction?.reason || '—'}"</span>
             </div>
           </div>
 
           {extractionResult.generated_buyer_message && (
-            <div className="pt-1.5 border-t border-[#1E2638]">
-              <span className="text-[9px] text-slate-500 uppercase block mb-1">Localized Buyer Notice:</span>
-              <p className="p-2 rounded bg-[#111622] border border-[#1E2638] text-[10px] text-slate-300 font-sans leading-relaxed">
+            <div className="pt-1.5 border-t border-[#2c2c2e]">
+              <span className="text-[9px] text-[#86868b] uppercase block mb-1">Localized Buyer Notice:</span>
+              <p className="p-2.5 rounded-lg bg-[#1c1c1e] border border-[#2c2c2e] text-[11px] text-slate-300 font-sans leading-relaxed">
                 {extractionResult.generated_buyer_message}
               </p>
             </div>
@@ -264,19 +264,19 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
 
       {/* Eval Benchmark Modal */}
       {showEvalModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-[#111622] border border-[#1E2638] rounded-md max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-            <div className="p-3.5 border-b border-[#1E2638] flex items-center justify-between bg-[#0D111A]">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#10B981]" />
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#161618] border border-[#2c2c2e] rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-4 border-b border-[#2c2c2e] flex items-center justify-between bg-[#121214]">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-[#34c759]" />
                 <div>
-                  <h3 className="text-xs font-bold text-[#F1F5F9] flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-[#f5f5f7] flex items-center gap-2">
                     AuthHorizon AI Safety & Eval Benchmark (T7)
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[#10B981]/20 text-emerald-300 border border-[#10B981]/40">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#34c759]/20 text-emerald-300 border border-[#34c759]/40">
                       100% DEFENSE RATE
                     </span>
                   </h3>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[11px] text-[#86868b]">
                     20 Multilingual notices (10 Valid • 10 Adversarial) evaluated against deterministic safety gate
                   </p>
                 </div>
@@ -285,14 +285,14 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
                 <button
                   onClick={handleRunEval}
                   disabled={runningEval}
-                  className="px-2.5 py-1 rounded bg-[#0070BA] hover:bg-[#005ea6] text-white text-[11px] font-medium flex items-center gap-1 shadow transition-all disabled:opacity-50"
+                  className="px-3 py-1 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-white text-[11px] font-medium flex items-center gap-1 shadow-xs transition-all disabled:opacity-50"
                 >
                   <RefreshCw className={`w-3 h-3 ${runningEval ? 'animate-spin' : ''}`} />
                   <span>{runningEval ? 'Running...' : 'Re-Run'}</span>
                 </button>
                 <button
                   onClick={() => setShowEvalModal(false)}
-                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#1E2638] transition-all"
+                  className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-[#2c2c2e] transition-all"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -303,31 +303,31 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
               {evalSummary ? (
                 <>
                   <div className="grid grid-cols-4 gap-3 font-mono text-center">
-                    <div className="p-2.5 rounded bg-[#0D111A] border border-[#1E2638]">
-                      <span className="text-[10px] text-slate-500 uppercase block">Valid Notices</span>
+                    <div className="p-3 rounded-xl bg-[#121214] border border-[#2c2c2e]">
+                      <span className="text-[10px] text-[#86868b] uppercase block">Valid Notices</span>
                       <strong className="text-emerald-400 text-sm">
                         {evalSummary.valid_notices?.passed || 10}/{evalSummary.valid_notices?.total || 10}
                       </strong>
                     </div>
-                    <div className="p-2.5 rounded bg-[#0D111A] border border-[#1E2638]">
-                      <span className="text-[10px] text-slate-500 uppercase block">Adversarial Stopped</span>
+                    <div className="p-3 rounded-xl bg-[#121214] border border-[#2c2c2e]">
+                      <span className="text-[10px] text-[#86868b] uppercase block">Adversarial Stopped</span>
                       <strong className="text-emerald-400 text-sm">
                         {evalSummary.adversarial_notices?.blocked || 10}/{evalSummary.adversarial_notices?.total || 10}
                       </strong>
                     </div>
-                    <div className="p-2.5 rounded bg-[#0D111A] border border-[#1E2638]">
-                      <span className="text-[10px] text-slate-500 uppercase block">Safety Precision</span>
+                    <div className="p-3 rounded-xl bg-[#121214] border border-[#2c2c2e]">
+                      <span className="text-[10px] text-[#86868b] uppercase block">Safety Precision</span>
                       <strong className="text-emerald-400 text-sm">{evalSummary.safety_precision_pct || 100}%</strong>
                     </div>
-                    <div className="p-2.5 rounded bg-[#0D111A] border border-[#1E2638]">
-                      <span className="text-[10px] text-slate-500 uppercase block">Gateway Invocations</span>
+                    <div className="p-3 rounded-xl bg-[#121214] border border-[#2c2c2e]">
+                      <span className="text-[10px] text-[#86868b] uppercase block">Gateway Invocations</span>
                       <strong className="text-emerald-400 text-sm">{evalSummary.gateway_calls_triggered || 0} (Strict 0)</strong>
                     </div>
                   </div>
 
-                  <div className="border border-[#1E2638] rounded overflow-hidden">
+                  <div className="border border-[#2c2c2e] rounded-xl overflow-hidden">
                     <table className="w-full text-left font-mono text-[11px]">
-                      <thead className="bg-[#0D111A] text-slate-400 uppercase text-[9px] border-b border-[#1E2638]">
+                      <thead className="bg-[#121214] text-[#86868b] uppercase text-[9px] border-b border-[#2c2c2e]">
                         <tr>
                           <th className="p-2">#</th>
                           <th className="p-2">Category</th>
@@ -337,15 +337,15 @@ export const NoticeParserCard: React.FC<NoticeParserCardProps> = ({ orderId, onN
                           <th className="p-2">Result / Interception Detail</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#1E2638]">
+                      <tbody className="divide-y divide-[#2c2c2e]">
                         {(evalSummary.results || []).map((r: any) => (
-                          <tr key={r.id} className="hover:bg-[#141B29]">
+                          <tr key={r.id} className="hover:bg-[#1a1a1e]">
                             <td className="p-2 text-slate-500">{r.id}</td>
                             <td className="p-2 font-bold text-slate-300">{r.category}</td>
                             <td className="p-2 text-slate-400">{r.language?.toUpperCase()}</td>
                             <td className="p-2">
-                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                                r.passed ? 'bg-[#10B981]/20 text-emerald-300' : 'bg-[#EF4444]/20 text-rose-300'
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                                r.passed ? 'bg-[#34c759]/20 text-emerald-300' : 'bg-[#ff453a]/20 text-rose-300'
                               }`}>
                                 {r.passed ? 'PASSED' : 'FAILED'}
                               </span>

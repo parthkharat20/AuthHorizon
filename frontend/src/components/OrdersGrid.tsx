@@ -354,10 +354,10 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
               <div className="flex items-center justify-center h-full">
                 <button
                   onClick={() => p.data?.id && onSelectOrder(p.data.id)}
-                  className={`px-2.5 py-1 rounded text-[11px] font-bold flex items-center gap-1 transition-all ${
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-all ${
                     isSelected
-                      ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
-                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                      ? 'bg-[#0071e3] text-white shadow-xs'
+                      : 'bg-[#1c1c1e] hover:bg-[#232326] text-[#a1a1a6] border border-[#2c2c2e]'
                   }`}
                 >
                   <Eye className="w-3 h-3" />
@@ -372,61 +372,61 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
   ], [selectedOrderId, onSelectOrder]);
 
   return (
-    <div className="w-full bg-[#111622] border border-[#1E2638] rounded-md p-3.5 shadow-sm">
+    <div className="w-full bg-[#161618] border border-[#2c2c2e] rounded-2xl p-4 shadow-xs">
       {/* Grid Sub-Header & Live KPIs */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3 pb-3 border-b border-[#1E2638]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3.5 pb-3 border-b border-[#2c2c2e]">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-xs font-bold text-[#F1F5F9] flex items-center gap-1.5 uppercase tracking-wide">
-              <span className="w-2 h-2 rounded-full bg-[#0070BA]" />
+            <h3 className="text-xs font-semibold text-[#f5f5f7] flex items-center gap-1.5 uppercase tracking-wide">
+              <span className="w-2 h-2 rounded-full bg-[#2997ff]" />
               Authorization Portfolio Ledger
             </h3>
-            <span className="px-1.5 py-0.5 text-[9px] font-mono font-semibold bg-[#0D111A] text-slate-400 rounded border border-[#1E2638]">
+            <span className="px-2 py-0.5 text-[9px] font-mono font-semibold bg-[#1c1c1e] text-[#a1a1a6] rounded-full border border-[#2c2c2e]">
               AG Grid Community v33
             </span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5 font-sans">
+          <p className="text-[11px] text-[#86868b] mt-0.5 font-sans">
             Real-time multi-currency split authorization ledger with deterministic hold tracking
           </p>
         </div>
 
         {/* Live Aggregation Badges */}
         <div className="flex items-center gap-2 overflow-x-auto text-xs font-mono">
-          <div className="px-2.5 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-center">
-            <span className="text-[9px] text-slate-400 uppercase block">Total Volume</span>
-            <span className="font-bold text-[#F1F5F9] tabular-nums">${kpis.totalVolume.toFixed(2)}</span>
+          <div className="px-3 py-1.5 rounded-xl bg-[#121214] border border-[#2c2c2e] text-center">
+            <span className="text-[9px] text-[#86868b] uppercase block">Total Volume</span>
+            <span className="font-bold text-[#f5f5f7] tabular-nums">${kpis.totalVolume.toFixed(2)}</span>
           </div>
-          <div className="px-2.5 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-center">
-            <span className="text-[9px] text-emerald-400 uppercase block">Captured</span>
-            <span className="font-bold text-emerald-400 tabular-nums">${kpis.totalCaptured.toFixed(2)}</span>
+          <div className="px-3 py-1.5 rounded-xl bg-[#121214] border border-[#2c2c2e] text-center">
+            <span className="text-[9px] text-[#30d158] uppercase block">Captured</span>
+            <span className="font-bold text-[#30d158] tabular-nums">${kpis.totalCaptured.toFixed(2)}</span>
           </div>
-          <div className="px-2.5 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-center">
-            <span className="text-[9px] text-amber-400 uppercase block">Active Held</span>
-            <span className="font-bold text-amber-400 tabular-nums">${kpis.totalHeld.toFixed(2)}</span>
+          <div className="px-3 py-1.5 rounded-xl bg-[#121214] border border-[#2c2c2e] text-center">
+            <span className="text-[9px] text-[#ff9f0a] uppercase block">Active Held</span>
+            <span className="font-bold text-[#ff9f0a] tabular-nums">${kpis.totalHeld.toFixed(2)}</span>
           </div>
-          <div className="px-2.5 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-center">
-            <span className="text-[9px] text-slate-400 uppercase block">Orders</span>
-            <span className="font-bold text-slate-200 tabular-nums">{orders.length}</span>
+          <div className="px-3 py-1.5 rounded-xl bg-[#121214] border border-[#2c2c2e] text-center">
+            <span className="text-[9px] text-[#86868b] uppercase block">Orders</span>
+            <span className="font-bold text-[#f5f5f7] tabular-nums">{orders.length}</span>
           </div>
         </div>
       </div>
 
       {/* Quick Filter, Layout Presets & CSV Export Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 mb-2.5">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 mb-3">
         <div className="relative flex-1 w-full max-w-sm">
-          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-slate-400 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#86868b] pointer-events-none" />
           <input
             type="text"
             value={quickFilter}
             onChange={(e) => setQuickFilter(e.target.value)}
             placeholder="Search orders, auth IDs, or statuses..."
-            className="w-full pl-7 pr-2.5 py-1 rounded bg-[#0D111A] border border-[#1E2638] text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-[#0070BA] font-mono transition-all"
+            className="w-full pl-8 pr-3 py-1.5 rounded-full bg-[#121214] border border-[#2c2c2e] text-xs text-[#f5f5f7] placeholder:text-[#86868b] focus:outline-none focus:border-[#0071e3] font-mono transition-all"
           />
         </div>
 
         <div className="flex items-center gap-1.5 self-end sm:self-auto">
           {savedLayoutNotice && (
-            <span className="text-[10px] font-mono font-bold text-emerald-400 px-1">
+            <span className="text-[10px] font-mono font-bold text-[#30d158] px-1">
               {savedLayoutNotice}
             </span>
           )}
@@ -434,25 +434,25 @@ export const OrdersGrid: React.FC<OrdersGridProps> = ({
           {/* Save / Restore Column State */}
           <button
             onClick={handleSaveLayout}
-            className="px-2 py-1 rounded bg-[#0D111A] hover:bg-[#141B29] text-slate-300 border border-[#1E2638] text-[11px] font-medium flex items-center gap-1 transition-all"
+            className="px-3 py-1.5 rounded-full bg-[#1c1c1e] hover:bg-[#232326] text-[#f5f5f7] border border-[#2c2c2e] text-[11px] font-medium flex items-center gap-1 transition-all"
             title="Save custom column order and widths to browser localStorage"
           >
-            <SlidersHorizontal className="w-3 h-3 text-[#0070BA]" />
+            <SlidersHorizontal className="w-3 h-3 text-[#2997ff]" />
             <span className="hidden md:inline">Save Layout</span>
           </button>
 
           <button
             onClick={handleRestoreLayout}
-            className="px-2 py-1 rounded bg-[#0D111A] hover:bg-[#141B29] text-slate-300 border border-[#1E2638] text-[11px] font-medium flex items-center gap-1 transition-all"
+            className="px-3 py-1.5 rounded-full bg-[#1c1c1e] hover:bg-[#232326] text-[#a1a1a6] hover:text-white border border-[#2c2c2e] text-[11px] font-medium flex items-center gap-1 transition-all"
             title="Restore saved column state or reset to default layout"
           >
-            <RotateCcw className="w-3 h-3 text-slate-400" />
+            <RotateCcw className="w-3 h-3 text-[#86868b]" />
             <span className="hidden md:inline">Reset</span>
           </button>
 
           <button
             onClick={handleExportCsv}
-            className="px-2.5 py-1 rounded bg-[#0070BA] hover:bg-[#005ea6] text-white text-[11px] font-semibold flex items-center gap-1 transition-all shadow-sm shrink-0"
+            className="px-3.5 py-1.5 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-white text-[11px] font-medium flex items-center gap-1 transition-all shadow-xs shrink-0"
             title="Export current grid records to canonical CSV via AG Grid API"
           >
             <Download className="w-3 h-3" />
